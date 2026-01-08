@@ -685,8 +685,3 @@ function gameLoop() {
     render();
     requestAnimationFrame(gameLoop);
 }
-
-// Initialize on load
-if (typeof console !== 'undefined' && console.log) {
-    console.log('PiniOverKill loaded successfully');
-}
