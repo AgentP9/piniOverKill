@@ -356,10 +356,10 @@ class Bullet {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(this.x + 1, this.y + 2, this.width - 2, this.height - 4);
         } else if (this.weapon === 'blaster') {
-            // Spread pellets
+            // Spread pellets - draw as small circles
             ctx.fillStyle = this.color;
             ctx.beginPath();
-            ctx.arc(this.x, this.y, this.width, 0, Math.PI * 2);
+            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
             ctx.fill();
         } else {
             // Standard bullets
@@ -765,8 +765,8 @@ function fireBullet() {
     if (gameState.currentWeapon === 'blaster') {
         // Blaster fires multiple pellets in a spread
         const blasterConfig = CONFIG.weapons.blaster;
-        for (let i = 0; i < weaponConfig.pellets; i++) {
-            const spread = (Math.random() - 0.5) * weaponConfig.spread;
+        for (let i = 0; i < blasterConfig.pellets; i++) {
+            const spread = (Math.random() - 0.5) * blasterConfig.spread;
             const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * blasterConfig.spreadMultiplier, 0);
             gameState.bullets.push(bullet);
         }
