@@ -42,6 +42,7 @@ const CONFIG = {
             speed: 6,
             pellets: 5,
             spread: 0.3,
+            spreadMultiplier: 10,
             color: '#ff8800',
             description: 'Shotgun-style spread'
         }
@@ -61,7 +62,8 @@ const CONFIG = {
         spawnRate: 3000,
         speed: 1.5,
         health: 30,
-        points: 5
+        points: 5,
+        playerDamage: 40
     },
     bullet: {
         enemyDamage: 20,
@@ -71,13 +73,11 @@ const CONFIG = {
         spawnChance: 0.3,
         duration: 10000,
         upgradeIncrement: 0.25,
-        upgradeMaxCap: 2.5
+        upgradeMaxCap: 2.5,
+        noseShieldBoost: 50
     },
     wave: {
         completionDelay: 3000
-    },
-    weapons: {
-        blasterSpreadMultiplier: 10
     },
     stars: {
         count: 50,
@@ -764,9 +764,10 @@ function fireBullet() {
 
     if (gameState.currentWeapon === 'blaster') {
         // Blaster fires multiple pellets in a spread
+        const blasterConfig = CONFIG.weapons.blaster;
         for (let i = 0; i < weaponConfig.pellets; i++) {
             const spread = (Math.random() - 0.5) * weaponConfig.spread;
-            const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * CONFIG.weapons.blasterSpreadMultiplier, 0);
+            const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * blasterConfig.spreadMultiplier, 0);
             gameState.bullets.push(bullet);
         }
     } else {
@@ -981,7 +982,7 @@ function checkCollisions() {
             asteroid.y + asteroid.height > player.y) {
             
             gameState.asteroids.splice(i, 1);
-            player.takeDamage(40);
+            player.takeDamage(CONFIG.asteroid.playerDamage);
             createExplosion(asteroid.x + asteroid.width / 2, asteroid.y + asteroid.height / 2, '#888888');
         }
     }
@@ -1019,8 +1020,8 @@ function checkCollisions() {
                     break;
                 case 'nose':
                     gameState.shipUpgrades.hasNose = true;
-                    player.maxShield += 50;
-                    player.heal(50);
+                    player.maxShield += CONFIG.powerup.noseShieldBoost;
+                    player.heal(CONFIG.powerup.noseShieldBoost);
                     break;
             }
             
