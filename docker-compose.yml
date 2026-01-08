@@ -3,7 +3,7 @@ services:
     build: .
     container_name: pinioverkill-game
     ports:
-      - "8080:80"
+      - "1717:80"
     restart: unless-stopped
     labels:
       - "description=PiniOverKill - Browser-based vertical scrolling shooter"

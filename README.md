@@ -52,7 +52,7 @@ PiniOverKill is a retro-style space shooter featuring:
    ```
 
 3. **Play the game**:
-   Open your browser and navigate to: `http://localhost:8080`
+   Open your browser and navigate to: `http://localhost:1717`
 
 4. **Stop the game**:
    ```bash
@@ -68,7 +68,7 @@ If you prefer to build and run manually:
 docker build -t pinioverkill .
 
 # Run the container
-docker run -d -p 8080:80 --name pinioverkill-game pinioverkill
+docker run -d -p 1717:80 --name pinioverkill-game pinioverkill
 
 # Stop the container
 docker stop pinioverkill-game
@@ -84,6 +84,14 @@ docker run -d -p 3000:80 --name pinioverkill-game pinioverkill
 ```
 
 Then access at: `http://localhost:3000`
+
+## Architecture
+
+The application runs in a lightweight Docker container:
+- **Base Image**: nginx:alpine (~40MB)
+- **Web Server**: Nginx with optimized configuration
+- **Default Port**: 1717 (mapped from container port 80)
+- **Game Files**: Static HTML/CSS/JS served by Nginx
 
 ## Controls
 
