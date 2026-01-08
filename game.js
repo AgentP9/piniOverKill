@@ -18,11 +18,18 @@ const CONFIG = {
     bullet: {
         speed: 7,
         playerDamage: 10,
-        enemyDamage: 20
+        enemyDamage: 20,
+        enemySpeed: 3,
+        spreadSpacing: 2
     },
     powerup: {
         spawnChance: 0.3,
         duration: 10000
+    },
+    stars: {
+        count: 50,
+        seedX: 37,
+        seedY: 73
     }
 };
 
@@ -271,8 +278,8 @@ class EnemyBullet {
         const dy = targetY - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        this.vx = (dx / distance) * 3;
-        this.vy = (dy / distance) * 3;
+        this.vx = (dx / distance) * CONFIG.bullet.enemySpeed;
+        this.vy = (dy / distance) * CONFIG.bullet.enemySpeed;
         this.damage = CONFIG.bullet.enemyDamage;
         this.color = '#ff0000';
     }
@@ -443,7 +450,7 @@ function fireBullet() {
                 player.y,
                 'spread'
             );
-            bullet.vx = i * 2;
+            bullet.vx = i * CONFIG.bullet.spreadSpacing;
             bullet.update = function() {
                 this.y -= this.speed;
                 this.x += this.vx;
@@ -630,9 +637,9 @@ function drawBackground() {
     
     // Draw stars
     ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 50; i++) {
-        const x = (i * 37) % CONFIG.canvas.width;
-        const y = ((i * 73 + gameState.scrollOffset) % CONFIG.canvas.height);
+    for (let i = 0; i < CONFIG.stars.count; i++) {
+        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
+        const y = ((i * CONFIG.stars.seedY + gameState.scrollOffset) % CONFIG.canvas.height);
         const size = (i % 3) + 1;
         ctx.fillRect(x, y, size, size);
     }
