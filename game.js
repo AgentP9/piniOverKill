@@ -686,6 +686,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Initialize
-console.log('PiniOverKill - Browser Game Loaded');
-console.log('Press START GAME to begin!');
+// Initialize on load
+if (typeof console !== 'undefined' && console.log) {
+    console.log('PiniOverKill loaded successfully');
+}
