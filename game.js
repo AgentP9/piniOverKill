@@ -54,7 +54,8 @@ const CONFIG = {
         health: 500,
         speed: 1,
         fireRate: 800,
-        points: 500
+        points: 500,
+        spawnThreshold: 15
     },
     asteroid: {
         spawnRate: 3000,
@@ -68,7 +69,15 @@ const CONFIG = {
     },
     powerup: {
         spawnChance: 0.3,
-        duration: 10000
+        duration: 10000,
+        upgradeIncrement: 0.25,
+        upgradeMaxCap: 2.5
+    },
+    wave: {
+        completionDelay: 3000
+    },
+    weapons: {
+        blasterSpreadMultiplier: 10
     },
     stars: {
         count: 50,
@@ -469,6 +478,18 @@ class Asteroid {
         this.rotation = 0;
         this.rotationSpeed = (Math.random() - 0.5) * 0.1;
         this.points = CONFIG.asteroid.points;
+        
+        // Pre-generate shape points to avoid flickering
+        this.shapePoints = [];
+        const sides = 8;
+        for (let i = 0; i < sides; i++) {
+            const angle = (Math.PI * 2 * i) / sides;
+            const radius = this.width / 2 * (0.7 + Math.random() * 0.3);
+            this.shapePoints.push({
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            });
+        }
     }
 
     update() {
@@ -482,19 +503,15 @@ class Asteroid {
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.rotate(this.rotation);
         
-        // Draw asteroid as irregular polygon
+        // Draw asteroid using pre-generated shape
         ctx.fillStyle = '#888888';
         ctx.beginPath();
-        const sides = 8;
-        for (let i = 0; i < sides; i++) {
-            const angle = (Math.PI * 2 * i) / sides;
-            const radius = this.width / 2 * (0.7 + Math.random() * 0.3);
-            const x = Math.cos(angle) * radius;
-            const y = Math.sin(angle) * radius;
+        for (let i = 0; i < this.shapePoints.length; i++) {
+            const point = this.shapePoints[i];
             if (i === 0) {
-                ctx.moveTo(x, y);
+                ctx.moveTo(point.x, point.y);
             } else {
-                ctx.lineTo(x, y);
+                ctx.lineTo(point.x, point.y);
             }
         }
         ctx.closePath();
@@ -749,7 +766,7 @@ function fireBullet() {
         // Blaster fires multiple pellets in a spread
         for (let i = 0; i < weaponConfig.pellets; i++) {
             const spread = (Math.random() - 0.5) * weaponConfig.spread;
-            const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * 10, 0);
+            const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * CONFIG.weapons.blasterSpreadMultiplier, 0);
             gameState.bullets.push(bullet);
         }
     } else {
@@ -780,8 +797,8 @@ function spawnEnemy() {
 
     gameState.lastEnemySpawn = now;
     
-    // Check if it's time to spawn boss (after 15 enemies defeated)
-    if (gameState.enemiesInWave >= 15 && !gameState.bossActive) {
+    // Check if it's time to spawn boss (after threshold enemies defeated)
+    if (gameState.enemiesInWave >= CONFIG.boss.spawnThreshold && !gameState.bossActive) {
         spawnBoss();
         return;
     }
@@ -886,7 +903,7 @@ function checkCollisions() {
                         gameState.waveComplete = false;
                         gameState.enemiesInWave = 0;
                         updateHUD();
-                    }, 3000);
+                    }, CONFIG.wave.completionDelay);
                 }
                 
                 updateHUD();
@@ -983,10 +1000,16 @@ function checkCollisions() {
             
             switch (powerup.type) {
                 case 'rateOfFire':
-                    gameState.weaponUpgrades.rateOfFire = Math.min(2.5, gameState.weaponUpgrades.rateOfFire + 0.25);
+                    gameState.weaponUpgrades.rateOfFire = Math.min(
+                        CONFIG.powerup.upgradeMaxCap, 
+                        gameState.weaponUpgrades.rateOfFire + CONFIG.powerup.upgradeIncrement
+                    );
                     break;
                 case 'damageRate':
-                    gameState.weaponUpgrades.damageRate = Math.min(2.5, gameState.weaponUpgrades.damageRate + 0.25);
+                    gameState.weaponUpgrades.damageRate = Math.min(
+                        CONFIG.powerup.upgradeMaxCap, 
+                        gameState.weaponUpgrades.damageRate + CONFIG.powerup.upgradeIncrement
+                    );
                     break;
                 case 'shield':
                     player.heal(30);
