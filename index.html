@@ -9,27 +9,37 @@
 <body>
     <div id="game-container">
         <div id="menu-screen" class="screen">
-            <h1>PINI OVERKILL</h1>
-            <p class="subtitle">A Vertical Scrolling Shooter</p>
-            <div class="menu-content">
+            <canvas id="menu-canvas"></canvas>
+            <div class="menu-overlay">
+                <h1>PINI OVERKILL</h1>
+                <p class="subtitle">A Vertical Scrolling Shooter</p>
                 <button id="start-button" class="game-button">START GAME</button>
-                <div class="instructions">
-                    <h2>CONTROLS</h2>
-                    <p>ARROW KEYS or WASD - Move Ship</p>
-                    <p>SPACE - Fire Weapon</p>
-                    <p>TAB - Switch Weapon Type</p>
-                    <p>ESC - Pause Game</p>
+                
+                <div class="menu-columns">
+                    <div class="menu-column">
+                        <div class="info-box">
+                            <h2>CONTROLS</h2>
+                            <p>WASD/ARROWS - Move</p>
+                            <p>SPACE - Fire</p>
+                            <p>TAB - Switch Weapon</p>
+                            <p>ESC - Pause</p>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-column">
+                        <div class="info-box">
+                            <h2>WEAPONS</h2>
+                            <p><strong>Laser:</strong> Mighty shot</p>
+                            <p><strong>Plasma:</strong> Balanced</p>
+                            <p><strong>Railgun:</strong> Rapid fire</p>
+                            <p><strong>Blaster:</strong> Spread shot</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="game-info">
-                    <h2>WEAPONS</h2>
-                    <p><strong>Laser:</strong> Single mighty shot, long reload</p>
-                    <p><strong>Plasma:</strong> Moderate rate, medium damage</p>
-                    <p><strong>Railgun:</strong> High rate, low damage</p>
-                    <p><strong>Blaster:</strong> Shotgun-style spread</p>
-                    <h2>ABOUT</h2>
-                    <p>Defeat enemies and asteroids!</p>
-                    <p>Face a boss at the end of each wave!</p>
-                    <p>Collect power-ups to enhance your ship!</p>
+                
+                <div class="info-box-wide">
+                    <h2>MISSION</h2>
+                    <p>Destroy enemies and asteroids • Defeat the boss at each wave end • Collect power-ups to enhance your ship</p>
                 </div>
             </div>
         </div>

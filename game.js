@@ -126,6 +126,18 @@ const ctx = canvas.getContext('2d');
 canvas.width = CONFIG.canvas.width;
 canvas.height = CONFIG.canvas.height;
 
+// Menu Canvas Setup
+const menuCanvas = document.getElementById('menu-canvas');
+const menuCtx = menuCanvas.getContext('2d');
+menuCanvas.width = CONFIG.canvas.width;
+menuCanvas.height = CONFIG.canvas.height;
+
+// Menu starfield state
+const menuStarfield = {
+    scrollOffset: 0,
+    animationId: null
+};
+
 // Screen Management
 const screens = {
     menu: document.getElementById('menu-screen'),
@@ -723,6 +735,13 @@ function resetGame() {
 function showScreen(screenName) {
     Object.values(screens).forEach(screen => screen.style.display = 'none');
     screens[screenName].style.display = 'flex';
+    
+    // Start or stop menu animation based on screen
+    if (screenName === 'menu') {
+        startMenuAnimation();
+    } else {
+        stopMenuAnimation();
+    }
 }
 
 function togglePause() {
@@ -1120,3 +1139,43 @@ function gameLoop() {
     render();
     requestAnimationFrame(gameLoop);
 }
+
+// Menu Starfield Animation
+function drawMenuStarfield() {
+    // Clear canvas
+    menuCtx.fillStyle = '#000000';
+    menuCtx.fillRect(0, 0, menuCanvas.width, menuCanvas.height);
+    
+    // Scrolling starfield
+    menuStarfield.scrollOffset = (menuStarfield.scrollOffset + 1) % 600;
+    
+    // Draw stars
+    menuCtx.fillStyle = '#ffffff';
+    for (let i = 0; i < CONFIG.stars.count; i++) {
+        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
+        const y = ((i * CONFIG.stars.seedY + menuStarfield.scrollOffset) % CONFIG.canvas.height);
+        const size = (i % 3) + 1;
+        menuCtx.fillRect(x, y, size, size);
+    }
+}
+
+function menuAnimationLoop() {
+    drawMenuStarfield();
+    menuStarfield.animationId = requestAnimationFrame(menuAnimationLoop);
+}
+
+function startMenuAnimation() {
+    if (!menuStarfield.animationId) {
+        menuAnimationLoop();
+    }
+}
+
+function stopMenuAnimation() {
+    if (menuStarfield.animationId) {
+        cancelAnimationFrame(menuStarfield.animationId);
+        menuStarfield.animationId = null;
+    }
+}
+
+// Start menu animation on page load
+startMenuAnimation();

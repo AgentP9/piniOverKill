@@ -34,6 +34,85 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+#menu-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.menu-overlay {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    width: 100%;
+    max-width: 750px;
+}
+
+.menu-columns {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.menu-column {
+    flex: 1;
+}
+
+.info-box {
+    background: rgba(0, 17, 0, 0.9);
+    border: 2px solid #0a0;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.info-box h2 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    color: #0f0;
+    text-align: center;
+    border-bottom: 1px solid #0a0;
+    padding-bottom: 8px;
+}
+
+.info-box p {
+    margin: 5px 0;
+    color: #0c0;
+    font-size: 0.9em;
+}
+
+.info-box-wide {
+    background: rgba(0, 17, 0, 0.9);
+    border: 2px solid #0a0;
+    padding: 15px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.info-box-wide h2 {
+    font-size: 1.2em;
+    margin-bottom: 10px;
+    color: #0f0;
+    text-align: center;
+    border-bottom: 1px solid #0a0;
+    padding-bottom: 8px;
+}
+
+.info-box-wide p {
+    color: #0c0;
+    font-size: 0.9em;
+    text-align: center;
+}
+
+#pause-screen,
+#gameover-screen {
     padding: 40px;
 }
 
@@ -41,14 +120,14 @@ body {
 #pause-screen h1,
 #gameover-screen h1 {
     font-size: 3em;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-shadow: 0 0 10px #0f0;
     letter-spacing: 4px;
 }
 
 .subtitle {
-    font-size: 1.2em;
-    margin-bottom: 40px;
+    font-size: 1em;
+    margin-bottom: 20px;
     color: #0a0;
 }
 
@@ -61,8 +140,8 @@ body {
     background: #000;
     color: #0f0;
     border: 2px solid #0f0;
-    padding: 15px 40px;
-    font-size: 1.2em;
+    padding: 12px 40px;
+    font-size: 1.1em;
     font-family: 'Courier New', monospace;
     cursor: pointer;
     margin: 10px;
@@ -78,24 +157,7 @@ body {
 
 .instructions,
 .game-info {
-    margin-top: 30px;
-    text-align: left;
-    border: 2px solid #0a0;
-    padding: 20px;
-    background: rgba(0, 255, 0, 0.05);
-}
-
-.instructions h2,
-.game-info h2 {
-    margin-bottom: 15px;
-    color: #0f0;
-    font-size: 1.5em;
-}
-
-.instructions p,
-.game-info p {
-    margin: 8px 0;
-    color: #0c0;
+    display: none;
 }
 
 #game-canvas {
@@ -170,5 +232,25 @@ body {
     .game-button {
         font-size: 1em;
         padding: 10px 30px;
+    }
+    
+    .menu-columns {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .info-box,
+    .info-box-wide {
+        padding: 10px;
+    }
+    
+    .info-box h2,
+    .info-box-wide h2 {
+        font-size: 1em;
+    }
+    
+    .info-box p,
+    .info-box-wide p {
+        font-size: 0.8em;
     }
 }
