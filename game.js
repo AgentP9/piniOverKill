@@ -8,7 +8,10 @@ const CONFIG = {
         width: 40,
         height: 40,
         speed: 5,
-        maxShield: 100
+        maxShield: 100,
+        maxStructure: 100,
+        shieldRegenRate: 0.5, // Shield points per frame when regenerating
+        shieldRegenDelay: 2000 // Delay in ms before shield starts regenerating after damage
     },
     weapons: {
         laser: {
@@ -78,7 +81,13 @@ const CONFIG = {
         duration: 10000,
         upgradeIncrement: 0.25,
         upgradeMaxCap: 2.5,
-        noseShieldBoost: 50
+        noseShieldBoost: 50,
+        shieldHealAmount: 30,
+        shieldBoostAmount: 25,
+        structureRepairAmount: 40,
+        repairBotDuration: 15000, // 15 seconds
+        repairBotHealRate: 0.3, // Structure points per frame
+        notificationDuration: 2000 // 2 seconds
     },
     overheat: {
         maxHeat: 100,
@@ -141,7 +150,11 @@ const gameState = {
     lastHeatGenerationTime: 0,
     railgunContinuousFire: false,
     cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
-    godMode: true
+    godMode: true,
+    repairBotActive: false,
+    repairBotEndTime: 0,
+    lastDamageTime: 0,
+    pickupNotifications: [] // Array of notification objects {text, startTime}
 };
 
 // Canvas Setup
@@ -225,6 +238,8 @@ class Player {
         this.height = CONFIG.player.height;
         this.shield = CONFIG.player.maxShield;
         this.maxShield = CONFIG.player.maxShield;
+        this.structure = CONFIG.player.maxStructure;
+        this.maxStructure = CONFIG.player.maxStructure;
         this.color = '#00ff00';
     }
 
@@ -308,16 +323,43 @@ class Player {
         // GodMode prevents all damage
         if (gameState.godMode) return;
         
-        this.shield -= damage;
-        if (this.shield <= 0) {
-            this.shield = 0;
+        // Record the time of damage
+        gameState.lastDamageTime = Date.now();
+        
+        // Damage shield first
+        if (this.shield > 0) {
+            this.shield -= damage;
+            if (this.shield < 0) {
+                // Overflow damage goes to structure
+                const overflow = Math.abs(this.shield);
+                this.shield = 0;
+                this.structure -= overflow;
+            }
+        } else {
+            // Shield depleted, damage structure
+            this.structure -= damage;
+        }
+        
+        if (this.structure <= 0) {
+            this.structure = 0;
             gameOver();
         }
         updateHUD();
     }
 
-    heal(amount) {
+    healShield(amount) {
         this.shield = Math.min(this.maxShield, this.shield + amount);
+        updateHUD();
+    }
+
+    boostShield(amount) {
+        this.maxShield += amount;
+        this.shield = Math.min(this.maxShield, this.shield + amount);
+        updateHUD();
+    }
+
+    repairStructure(amount) {
+        this.structure = Math.min(this.maxStructure, this.structure + amount);
         updateHUD();
     }
 }
@@ -643,7 +685,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -680,12 +722,76 @@ class Powerup {
                 ctx.fillStyle = '#ff0000';
                 ctx.fillRect(-2, -2, 4, 4);
                 break;
-            case 'shield':
-                // Shield icon
+            case 'shieldHeal':
+                // Shield heal icon (cyan shield with +)
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = '#00ffff';
+                ctx.fillRect(-5, -1, 10, 2);
+                ctx.fillRect(-1, -5, 2, 10);
+                break;
+            case 'shieldBoost':
+                // Shield boost icon (cyan shield with arrow up)
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = '#00ffff';
+                ctx.beginPath();
+                ctx.moveTo(0, -6);
+                ctx.lineTo(-3, -2);
+                ctx.lineTo(3, -2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillRect(-1, -2, 2, 8);
+                break;
+            case 'structureRepair':
+                // Structure repair icon (wrench/hammer)
+                ctx.strokeStyle = '#ffa500';
+                ctx.lineWidth = 2;
+                ctx.fillStyle = '#ffa500';
+                // Wrench body
+                ctx.fillRect(-2, -8, 4, 12);
+                // Wrench head
+                ctx.beginPath();
+                ctx.arc(0, -8, 4, 0, Math.PI * 2);
+                ctx.fill();
+                // Wrench handle
+                ctx.fillRect(-1, 4, 2, 6);
+                break;
+            case 'repairBot':
+                // Repair bot icon (small robot/drone)
+                ctx.fillStyle = '#00ff00';
+                // Bot body
+                ctx.fillRect(-5, -5, 10, 10);
+                ctx.fillStyle = '#ffff00';
+                // Bot eyes
+                ctx.fillRect(-4, -3, 2, 2);
+                ctx.fillRect(2, -3, 2, 2);
+                // Bot antenna
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, -5);
+                ctx.lineTo(0, -8);
+                ctx.stroke();
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(0, -8, 2, 0, Math.PI * 2);
+                ctx.fill();
+                // Bot propellers
+                ctx.strokeStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.moveTo(-8, 0);
+                ctx.lineTo(-5, 0);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(8, 0);
+                ctx.lineTo(5, 0);
                 ctx.stroke();
                 break;
             case 'wings':
@@ -798,6 +904,10 @@ function resetGame() {
     gameState.lastHeatGenerationTime = 0;
     gameState.railgunContinuousFire = false;
     gameState.cooldownAnimationTriggered = false;
+    gameState.repairBotActive = false;
+    gameState.repairBotEndTime = 0;
+    gameState.lastDamageTime = 0;
+    gameState.pickupNotifications = [];
     updateHUD();
 }
 
@@ -960,7 +1070,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'];
+    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -969,6 +1079,13 @@ function createExplosion(x, y, color) {
     for (let i = 0; i < 15; i++) {
         gameState.particles.push(new Particle(x, y, color));
     }
+}
+
+function showPickupNotification(text) {
+    gameState.pickupNotifications.push({
+        text: text,
+        startTime: Date.now()
+    });
 }
 
 function checkCollisions() {
@@ -1131,26 +1248,45 @@ function checkCollisions() {
                         CONFIG.powerup.upgradeMaxCap, 
                         gameState.weaponUpgrades.rateOfFire + CONFIG.powerup.upgradeIncrement
                     );
+                    showPickupNotification('FIRE RATE UPGRADE');
                     break;
                 case 'damageRate':
                     gameState.weaponUpgrades.damageRate = Math.min(
                         CONFIG.powerup.upgradeMaxCap, 
                         gameState.weaponUpgrades.damageRate + CONFIG.powerup.upgradeIncrement
                     );
+                    showPickupNotification('DAMAGE UPGRADE');
                     break;
-                case 'shield':
-                    player.heal(30);
+                case 'shieldHeal':
+                    player.healShield(CONFIG.powerup.shieldHealAmount);
+                    showPickupNotification('SHIELD HEALED');
+                    break;
+                case 'shieldBoost':
+                    player.boostShield(CONFIG.powerup.shieldBoostAmount);
+                    showPickupNotification('SHIELD CAPACITY INCREASED');
+                    break;
+                case 'structureRepair':
+                    player.repairStructure(CONFIG.powerup.structureRepairAmount);
+                    showPickupNotification('STRUCTURE REPAIRED');
+                    break;
+                case 'repairBot':
+                    gameState.repairBotActive = true;
+                    gameState.repairBotEndTime = Date.now() + CONFIG.powerup.repairBotDuration;
+                    showPickupNotification('REPAIR BOT DEPLOYED');
                     break;
                 case 'wings':
                     gameState.shipUpgrades.hasWings = true;
+                    showPickupNotification('WING CANNONS INSTALLED');
                     break;
                 case 'nose':
                     gameState.shipUpgrades.hasNose = true;
                     player.maxShield += CONFIG.powerup.noseShieldBoost;
-                    player.heal(CONFIG.powerup.noseShieldBoost);
+                    player.healShield(CONFIG.powerup.noseShieldBoost);
+                    showPickupNotification('NOSE ARMOR INSTALLED');
                     break;
                 case 'cooling':
                     gameState.shipUpgrades.hasCoolingSystem = true;
+                    showPickupNotification('COOLING SYSTEM INSTALLED');
                     break;
             }
             
@@ -1170,6 +1306,9 @@ function updateHUD() {
     if (gameState.player) {
         const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
         document.getElementById('shield-fill').style.width = shieldPercent + '%';
+        
+        const structurePercent = (gameState.player.structure / gameState.player.maxStructure) * 100;
+        document.getElementById('structure-fill').style.width = structurePercent + '%';
     }
     
     // Update heat bar visuals
@@ -1231,8 +1370,26 @@ function update() {
         fireBullet();
     }
 
-    // Weapon heat cooling with passive bonus
+    // Shield regeneration (after delay from last damage)
     const now = Date.now();
+    const timeSinceLastDamage = now - gameState.lastDamageTime;
+    if (timeSinceLastDamage > CONFIG.player.shieldRegenDelay && gameState.player.shield < gameState.player.maxShield) {
+        gameState.player.shield = Math.min(gameState.player.maxShield, gameState.player.shield + CONFIG.player.shieldRegenRate);
+        updateHUD();
+    }
+
+    // Repair bot structure healing
+    if (gameState.repairBotActive) {
+        if (now < gameState.repairBotEndTime) {
+            if (gameState.player.structure < gameState.player.maxStructure) {
+                gameState.player.repairStructure(CONFIG.powerup.repairBotHealRate);
+            }
+        } else {
+            gameState.repairBotActive = false;
+        }
+    }
+
+    // Weapon heat cooling with passive bonus
     const timeSinceLastHeat = now - gameState.lastHeatGenerationTime;
     const isPassiveCooling = timeSinceLastHeat > CONFIG.overheat.passiveCoolingDelay;
     
@@ -1247,6 +1404,11 @@ function update() {
     }
     
     gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
+
+    // Update pickup notifications (remove expired ones)
+    gameState.pickupNotifications = gameState.pickupNotifications.filter(notification => {
+        return (now - notification.startTime) < CONFIG.powerup.notificationDuration;
+    });
 
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
@@ -1285,6 +1447,43 @@ function render() {
     gameState.enemyBullets.forEach(bullet => bullet.draw());
     gameState.powerups.forEach(powerup => powerup.draw());
     gameState.particles.forEach(particle => particle.draw());
+    
+    // Draw repair bot indicator (small robot circling the ship)
+    if (gameState.repairBotActive) {
+        const now = Date.now();
+        const botAngle = (now / 500) % (Math.PI * 2); // Complete rotation every 0.5 seconds
+        const botX = gameState.player.x + gameState.player.width / 2 + Math.cos(botAngle) * 35;
+        const botY = gameState.player.y + gameState.player.height / 2 + Math.sin(botAngle) * 35;
+        
+        ctx.fillStyle = '#00ff00';
+        ctx.fillRect(botX - 4, botY - 4, 8, 8);
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(botX - 2, botY - 2, 1, 1);
+        ctx.fillRect(botX + 1, botY - 2, 1, 1);
+        
+        // Draw repair bot beam to ship
+        ctx.strokeStyle = 'rgba(0, 255, 0, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(botX, botY);
+        ctx.lineTo(gameState.player.x + gameState.player.width / 2, gameState.player.y + gameState.player.height / 2);
+        ctx.stroke();
+    }
+    
+    // Draw pickup notifications
+    const now = Date.now();
+    gameState.pickupNotifications.forEach((notification, index) => {
+        const age = now - notification.startTime;
+        const opacity = Math.max(0, 1 - (age / CONFIG.powerup.notificationDuration));
+        
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = '#ffff00';
+        ctx.font = '20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(notification.text, CONFIG.canvas.width / 2, 60 + (index * 30));
+        ctx.globalAlpha = 1;
+    });
+    ctx.textAlign = 'left';
     
     // Draw wave complete message
     if (gameState.waveComplete) {
