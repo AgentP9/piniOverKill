@@ -34,9 +34,15 @@ PiniOverKill is a retro-style space shooter featuring:
 - **Shield Boost** (Cyan Shield with Arrow): Increases maximum shield capacity by 25
 - **Structure Repair** (Orange Wrench): Repairs 40 structure points
 - **Repair Bot** (Green Robot): Deploys a bot that repairs structure over 15 seconds
-- **Wing Cannons** (Green Wings): Adds side cannons to your ship
-- **Nose Armor** (Cyan Triangle): Increases shield capacity by 50
-- **Cooling System** (Blue Fan): Reduces weapon heat generation
+
+### Leveled Addons (Max Level: 10)
+- **Wing Cannons** (Green Wings): Adds side cannons to your ship. Each level increases structure capacity by 10 points
+- **Nose Armor** (Cyan Triangle): Reinforced front armor. Each level increases shield capacity by 10 points
+- **Cooling System** (Blue Fan): Advanced cooling system. Each level improves cooldown rate by 5%
+- **Turret** (Orange Gun): Auto-targeting turret that fires plasma at nearby enemies. Each level increases fire rate (starts at 2000ms, -200ms per level)
+
+### Other Addons
+- **Kamikaze Drones** (Pink Diamond): Deploys autonomous drones that seek and destroy enemies
 
 ## Docker Deployment
 
