@@ -1184,6 +1184,11 @@ function fireBullet() {
 }
 
 function switchWeapon() {
+    // Prevent weapon switching if weapon is locked due to overheating
+    if (gameState.isWeaponLocked) {
+        return;
+    }
+    
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     const currentIndex = weapons.indexOf(gameState.currentWeapon);
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
@@ -1547,7 +1552,7 @@ function updateHUD() {
     document.getElementById('wave').textContent = gameState.wave;
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
     let weaponText = weaponConfig.name.toUpperCase();
-    document.getElementById('weapon-level').textContent = weaponText;
+    document.getElementById('weapon-name').textContent = weaponText;
     
     if (gameState.player) {
         const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
