@@ -268,6 +268,25 @@ body {
     transition: background-color 0.3s;
 }
 
+#cooldown-fill {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, rgba(0, 191, 255, 0.7), rgba(173, 216, 230, 0.9));
+    pointer-events: none;
+}
+
+@keyframes cooldown-sweep {
+    from {
+        width: 0%;
+    }
+    to {
+        width: 100%;
+    }
+}
+
 .final-score,
 .final-wave {
     font-size: 1.5em;

@@ -88,7 +88,7 @@ const CONFIG = {
         overheatThreshold: 75,
         cautionThresholdMultiplier: 0.7,
         fireRatePenalty: 1.8,
-        lockoutDuration: 1500,
+        lockoutDuration: 3000, // 3 seconds cooldown animation when overheated
         coolingSystemHeatMultiplier: 0.4,
         coolingSystemCooldownBonus: 1.3
     },
@@ -140,6 +140,7 @@ const gameState = {
     weaponLockEndTime: 0,
     lastHeatGenerationTime: 0,
     railgunContinuousFire: false,
+    cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
     godMode: true
 };
 
@@ -796,6 +797,7 @@ function resetGame() {
     gameState.weaponLockEndTime = 0;
     gameState.lastHeatGenerationTime = 0;
     gameState.railgunContinuousFire = false;
+    gameState.cooldownAnimationTriggered = false;
     updateHUD();
 }
 
@@ -1170,25 +1172,8 @@ function updateHUD() {
         document.getElementById('shield-fill').style.width = shieldPercent + '%';
     }
     
-    // Update heat bar
-    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
-    const heatFill = document.getElementById('heat-fill');
-    if (heatFill) {
-        heatFill.style.width = heatPercent + '%';
-        
-        // Change color based on heat level with smooth transitions
-        if (gameState.isWeaponLocked) {
-            heatFill.style.backgroundColor = '#ff0000';
-        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
-            // Warning state - approaching overheat
-            heatFill.style.backgroundColor = '#ff6600';
-        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
-            // Caution state
-            heatFill.style.backgroundColor = '#ff9900';
-        } else {
-            heatFill.style.backgroundColor = '#ffff00';
-        }
-    }
+    // Update heat bar visuals
+    updateHeatBarVisuals();
     
     // Update addon status display
     updateAddonStatus();
@@ -1353,6 +1338,48 @@ function stopMenuAnimation() {
     if (menuStarfield.animationId) {
         cancelAnimationFrame(menuStarfield.animationId);
         menuStarfield.animationId = null;
+    }
+}
+
+// Heat Bar Update System
+function updateHeatBarVisuals() {
+    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
+    const heatFill = document.getElementById('heat-fill');
+    const cooldownFill = document.getElementById('cooldown-fill');
+    
+    if (heatFill) {
+        heatFill.style.width = heatPercent + '%';
+        
+        // Change color based on heat level
+        if (gameState.isWeaponLocked) {
+            heatFill.style.backgroundColor = '#ff0000';
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
+            heatFill.style.backgroundColor = '#ff6600';
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
+            heatFill.style.backgroundColor = '#ff9900';
+        } else {
+            heatFill.style.backgroundColor = '#ffff00';
+        }
+    }
+    
+    // Update cooldown overlay bar - show animation when locked
+    if (cooldownFill) {
+        if (gameState.isWeaponLocked && !gameState.cooldownAnimationTriggered) {
+            // Trigger cooldown animation only once when weapon first locks
+            gameState.cooldownAnimationTriggered = true;
+            cooldownFill.style.animation = 'none';
+            // Force reflow to restart animation
+            void cooldownFill.offsetWidth;
+            const animationDuration = CONFIG.overheat.lockoutDuration / 1000; // Convert ms to seconds
+            cooldownFill.style.animation = `cooldown-sweep ${animationDuration}s linear forwards`;
+        } else if (!gameState.isWeaponLocked) {
+            // Reset animation trigger when weapon unlocks
+            gameState.cooldownAnimationTriggered = false;
+            // Show static cooldown state based on heat
+            cooldownFill.style.animation = 'none';
+            const cooldownPercent = 100 - heatPercent;
+            cooldownFill.style.width = cooldownPercent + '%';
+        }
     }
 }
 
