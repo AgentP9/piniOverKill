@@ -1161,10 +1161,8 @@ function update() {
         fireBullet();
     }
 
-    // Weapon heat cooling
-    if (!gameState.isWeaponLocked) {
-        gameState.weaponHeat = Math.max(0, gameState.weaponHeat - CONFIG.overheat.cooldownRate);
-    }
+    // Weapon heat cooling - always cool down, even when locked
+    gameState.weaponHeat = Math.max(0, gameState.weaponHeat - CONFIG.overheat.cooldownRate);
 
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
