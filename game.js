@@ -1462,7 +1462,7 @@ function checkCollisions() {
                     gameState.kamikazeDroneActive = true;
                     gameState.kamikazeDronesRemaining += CONFIG.kamikazeDrone.dronesPerPickup;
                     gameState.lastDroneSpawn = Date.now();
-                    showPickupNotification('KAMIKAZE DRONES ACTIVATED (x5)');
+                    showPickupNotification(`KAMIKAZE DRONES ACTIVATED (x${CONFIG.kamikazeDrone.dronesPerPickup})`);
                     break;
             }
             
