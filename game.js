@@ -1173,6 +1173,8 @@ function updateHUD() {
     // Update heat bar
     const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
     const heatFill = document.getElementById('heat-fill');
+    const cooldownFill = document.getElementById('cooldown-fill');
+    
     if (heatFill) {
         heatFill.style.width = heatPercent + '%';
         
@@ -1188,6 +1190,15 @@ function updateHUD() {
         } else {
             heatFill.style.backgroundColor = '#ffff00';
         }
+    }
+    
+    // Update cooldown overlay bar
+    if (cooldownFill) {
+        // Cooldown bar shows the cooling progress from right to left
+        // When heat is at max (100%), cooldown bar should be at 0%
+        // When heat is at 0%, cooldown bar should be at 100% (fully cooled)
+        const cooldownPercent = 100 - heatPercent;
+        cooldownFill.style.width = cooldownPercent + '%';
     }
     
     // Update addon status display
