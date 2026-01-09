@@ -18,7 +18,7 @@ const CONFIG = {
             speed: 12,
             color: '#ff0000',
             description: 'Single mighty shot',
-            heatPerShot: 18
+            heatPerShot: 80
         },
         plasma: {
             name: 'Plasma',
@@ -27,7 +27,7 @@ const CONFIG = {
             speed: 8,
             color: '#00ffff',
             description: 'Moderate rate, medium damage',
-            heatPerShot: 12
+            heatPerShot: 30
         },
         railgun: {
             name: 'Railgun',
@@ -36,7 +36,7 @@ const CONFIG = {
             speed: 15,
             color: '#ffff00',
             description: 'High rate, low damage',
-            heatPerShot: 6
+            heatPerShot: 12
         },
         blaster: {
             name: 'Blaster',
@@ -48,7 +48,7 @@ const CONFIG = {
             spreadMultiplier: 10,
             color: '#ff8800',
             description: 'Shotgun-style spread',
-            heatPerShot: 14
+            heatPerShot: 45
         }
     },
     enemy: {
@@ -84,7 +84,7 @@ const CONFIG = {
         maxHeat: 100,
         cooldownRate: 0.8,
         cooldownRatePassive: 1.5,
-        passiveCoolingDelay: 500,
+        passiveCoolingDelay: 1000,
         overheatThreshold: 75,
         cautionThresholdMultiplier: 0.7,
         fireRatePenalty: 1.8,
