@@ -1276,8 +1276,9 @@ function fireBullet() {
     
     // Increase heat after firing
     const coolingLevel = gameState.shipUpgrades.coolingLevel;
+    // Base cooling multiplier, then apply level bonus additively
     const coolingMultiplier = coolingLevel > 0 ? 
-        CONFIG.overheat.coolingSystemHeatMultiplier * (1 - coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel) : 1;
+        CONFIG.overheat.coolingSystemHeatMultiplier * Math.max(0.3, 1 - coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel) : 1;
     const heatIncrease = weaponConfig.heatPerShot * coolingMultiplier;
     gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
     gameState.lastHeatGenerationTime = now;
@@ -1962,10 +1963,12 @@ function update() {
         cooldownRate = CONFIG.overheat.cooldownRatePassive;
     }
     
-    // Apply cooling system bonus
+    // Apply cooling system bonus (additive, not multiplicative)
     const coolingLevel = gameState.shipUpgrades.coolingLevel;
     if (coolingLevel > 0) {
-        cooldownRate *= CONFIG.overheat.coolingSystemCooldownBonus * (1 + coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel);
+        // Base bonus + level bonus, capped at 3x improvement
+        const coolingBonus = Math.min(3.0, CONFIG.overheat.coolingSystemCooldownBonus + coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel);
+        cooldownRate *= coolingBonus;
     }
     
     gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
@@ -1973,7 +1976,7 @@ function update() {
     // Turret auto-firing
     const turretLevel = gameState.shipUpgrades.turretLevel;
     if (turretLevel > 0) {
-        const turretFireRate = CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel;
+        const turretFireRate = Math.max(200, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
         if (now - gameState.lastTurretFire >= turretFireRate) {
             fireTurret();
             gameState.lastTurretFire = now;
