@@ -893,7 +893,7 @@ function fireBullet() {
     if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
         gameState.isWeaponLocked = true;
         gameState.weaponLockEndTime = now + CONFIG.overheat.lockoutDuration;
-        gameState.railgunContinuousFire = false; // Disable continuous fire if active
+        // Note: Don't disable railgunContinuousFire here - let it resume automatically after cooldown
     }
     
     updateHUD();
