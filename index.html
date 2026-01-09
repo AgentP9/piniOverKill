@@ -55,35 +55,32 @@
             <canvas id="game-canvas"></canvas>
             <div id="hud">
                 <div class="hud-item">
-                    <span class="hud-label">SCORE</span>
-                    <span id="score">0</span>
+                    <span class="hud-label">SCORE / WAVE</span>
+                    <span id="score-wave"><span id="score">0</span> / <span id="wave">1</span></span>
                 </div>
                 <div class="hud-item">
-                    <span class="hud-label">SHIELD</span>
-                    <div id="shield-bar">
-                        <div id="shield-fill"></div>
+                    <span class="hud-label">HEALTH</span>
+                    <div class="health-container">
+                        <div class="health-bar-wrapper">
+                            <span class="health-bar-label">Shield</span>
+                            <div id="shield-bar">
+                                <div id="shield-fill"></div>
+                            </div>
+                        </div>
+                        <div class="health-bar-wrapper">
+                            <span class="health-bar-label">Structure</span>
+                            <div id="structure-bar">
+                                <div id="structure-fill"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="hud-item">
-                    <span class="hud-label">STRUCTURE</span>
-                    <div id="structure-bar">
-                        <div id="structure-fill"></div>
-                    </div>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">HEAT</span>
+                    <span class="hud-label" id="weapon-name">PLASMA</span>
                     <div id="heat-bar">
                         <div id="heat-fill"></div>
                         <div id="cooldown-fill"></div>
                     </div>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">WEAPON</span>
-                    <span id="weapon-level">1</span>
-                </div>
-                <div class="hud-item">
-                    <span class="hud-label">WAVE</span>
-                    <span id="wave">1</span>
                 </div>
                 <div class="hud-item">
                     <span class="hud-label">ADDONS</span>
