@@ -88,7 +88,7 @@ const CONFIG = {
         overheatThreshold: 75,
         cautionThresholdMultiplier: 0.7,
         fireRatePenalty: 1.8,
-        lockoutDuration: 1500,
+        lockoutDuration: 3000, // 3 seconds cooldown animation when overheated
         coolingSystemHeatMultiplier: 0.4,
         coolingSystemCooldownBonus: 1.3
     },
@@ -136,7 +136,6 @@ const gameState = {
     bossActive: false,
     waveComplete: false,
     weaponHeat: 0,
-    displayedHeat: 0, // Smoothly animated heat value for display
     isWeaponLocked: false,
     weaponLockEndTime: 0,
     lastHeatGenerationTime: 0,
@@ -758,7 +757,6 @@ class Particle {
 function startGame() {
     resetGame();
     showScreen('game');
-    startHeatBarAnimation(); // Start independent heat bar animation
     gameLoop();
 }
 
@@ -794,7 +792,6 @@ function resetGame() {
     gameState.bossActive = false;
     gameState.waveComplete = false;
     gameState.weaponHeat = 0;
-    gameState.displayedHeat = 0;
     gameState.isWeaponLocked = false;
     gameState.weaponLockEndTime = 0;
     gameState.lastHeatGenerationTime = 0;
@@ -806,13 +803,9 @@ function showScreen(screenName) {
     Object.values(screens).forEach(screen => screen.style.display = 'none');
     screens[screenName].style.display = 'flex';
     
-    // Start or stop animations based on screen
+    // Start or stop menu animation based on screen
     if (screenName === 'menu') {
         startMenuAnimation();
-        stopHeatBarAnimation();
-    } else if (screenName === 'game') {
-        stopMenuAnimation();
-        startHeatBarAnimation();
     } else {
         stopMenuAnimation();
     }
@@ -839,7 +832,6 @@ function quitToMenu() {
 
 function gameOver() {
     gameState.isGameOver = true;
-    stopHeatBarAnimation();
     document.getElementById('final-score').textContent = gameState.score;
     document.getElementById('final-wave').textContent = gameState.wave;
     showScreen('gameover');
@@ -1178,8 +1170,8 @@ function updateHUD() {
         document.getElementById('shield-fill').style.width = shieldPercent + '%';
     }
     
-    // Heat bar is now updated by independent animation loop (animateHeatBar)
-    // No need to update it here anymore
+    // Update heat bar visuals
+    updateHeatBarVisuals();
     
     // Update addon status display
     updateAddonStatus();
@@ -1347,69 +1339,41 @@ function stopMenuAnimation() {
     }
 }
 
-// Smooth Heat Bar Animation System
-let heatBarAnimationId = null;
-
-function animateHeatBar() {
-    // Smoothly interpolate displayedHeat towards actual weaponHeat
-    const interpolationSpeed = 0.15; // Higher = faster interpolation (0-1)
-    const difference = gameState.weaponHeat - gameState.displayedHeat;
-    
-    if (Math.abs(difference) > 0.01) {
-        gameState.displayedHeat += difference * interpolationSpeed;
-    } else {
-        gameState.displayedHeat = gameState.weaponHeat;
-    }
-    
-    // Update the visual heat bar elements
-    updateHeatBarVisuals();
-    
-    // Continue animation loop
-    heatBarAnimationId = requestAnimationFrame(animateHeatBar);
-}
-
+// Heat Bar Update System
 function updateHeatBarVisuals() {
-    const heatPercent = (gameState.displayedHeat / CONFIG.overheat.maxHeat) * 100;
+    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
     const heatFill = document.getElementById('heat-fill');
     const cooldownFill = document.getElementById('cooldown-fill');
     
     if (heatFill) {
         heatFill.style.width = heatPercent + '%';
         
-        // Change color based on heat level with smooth transitions
+        // Change color based on heat level
         if (gameState.isWeaponLocked) {
             heatFill.style.backgroundColor = '#ff0000';
-        } else if (gameState.displayedHeat >= CONFIG.overheat.overheatThreshold) {
-            // Warning state - approaching overheat
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
             heatFill.style.backgroundColor = '#ff6600';
-        } else if (gameState.displayedHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
-            // Caution state
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
             heatFill.style.backgroundColor = '#ff9900';
         } else {
             heatFill.style.backgroundColor = '#ffff00';
         }
     }
     
-    // Update cooldown overlay bar
+    // Update cooldown overlay bar - show 3-second animation when locked
     if (cooldownFill) {
-        // Cooldown bar shows the cooling progress from right to left
-        // When heat is at max (100%), cooldown bar should be at 0%
-        // When heat is at 0%, cooldown bar should be at 100% (fully cooled)
-        const cooldownPercent = 100 - heatPercent;
-        cooldownFill.style.width = cooldownPercent + '%';
-    }
-}
-
-function startHeatBarAnimation() {
-    if (!heatBarAnimationId) {
-        animateHeatBar();
-    }
-}
-
-function stopHeatBarAnimation() {
-    if (heatBarAnimationId) {
-        cancelAnimationFrame(heatBarAnimationId);
-        heatBarAnimationId = null;
+        if (gameState.isWeaponLocked) {
+            // Trigger 3-second cooldown animation
+            cooldownFill.style.animation = 'none';
+            // Force reflow to restart animation
+            void cooldownFill.offsetWidth;
+            cooldownFill.style.animation = 'cooldown-sweep 3s linear forwards';
+        } else {
+            // Show static cooldown state based on heat
+            cooldownFill.style.animation = 'none';
+            const cooldownPercent = 100 - heatPercent;
+            cooldownFill.style.width = cooldownPercent + '%';
+        }
     }
 }
 
