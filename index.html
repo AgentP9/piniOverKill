@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiniOverKill - Vertical Scrolling Shooter</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="menu-screen" class="screen">
+            <canvas id="menu-canvas"></canvas>
+            <div class="menu-overlay">
+                <h1>PINI OVERKILL</h1>
+                <p class="subtitle">A Vertical Scrolling Shooter</p>
+                <button id="start-button" class="game-button">START GAME</button>
+                
+                <div class="menu-columns">
+                    <div class="menu-column">
+                        <div class="info-box">
+                            <h2>CONTROLS</h2>
+                            <p>WASD/ARROWS - Move</p>
+                            <p>SPACE - Fire</p>
+                            <p>TAB - Switch Weapon</p>
+                            <p>ESC - Pause</p>
+                        </div>
+                    </div>
+                    
+                    <div class="menu-column">
+                        <div class="info-box">
+                            <h2>WEAPONS</h2>
+                            <p><strong>Laser:</strong> Mighty shot</p>
+                            <p><strong>Plasma:</strong> Balanced</p>
+                            <p><strong>Railgun:</strong> Rapid fire</p>
+                            <p><strong>Blaster:</strong> Spread shot</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-box-wide">
+                    <h2>MISSION</h2>
+                    <p>Destroy enemies and asteroids • Defeat the boss at each wave end • Collect power-ups to enhance your ship</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen" style="display: none;">
+            <canvas id="game-canvas"></canvas>
+            <div id="hud">
+                <div class="hud-item">
+                    <span class="hud-label">SCORE:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">SHIELD:</span>
+                    <div id="shield-bar">
+                        <div id="shield-fill"></div>
+                    </div>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">WEAPON:</span>
+                    <span id="weapon-level">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="hud-label">WAVE:</span>
+                    <span id="wave">1</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="pause-screen" class="screen" style="display: none;">
+            <h1>PAUSED</h1>
+            <button id="resume-button" class="game-button">RESUME</button>
+            <button id="quit-button" class="game-button">QUIT TO MENU</button>
+        </div>
+
+        <div id="gameover-screen" class="screen" style="display: none;">
+            <h1>GAME OVER</h1>
+            <p class="final-score">FINAL SCORE: <span id="final-score">0</span></p>
+            <p class="final-wave">WAVES COMPLETED: <span id="final-wave">0</span></p>
+            <button id="restart-button" class="game-button">PLAY AGAIN</button>
+            <button id="menu-button" class="game-button">MAIN MENU</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
