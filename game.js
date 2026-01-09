@@ -1153,9 +1153,6 @@ function updateHUD() {
     document.getElementById('wave').textContent = gameState.wave;
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
     let weaponText = weaponConfig.name.toUpperCase();
-    if (gameState.currentWeapon === 'railgun' && gameState.railgunContinuousFire) {
-        weaponText += ' [AUTO]';
-    }
     document.getElementById('weapon-level').textContent = weaponText;
     
     if (gameState.player) {
@@ -1178,6 +1175,32 @@ function updateHUD() {
             heatFill.style.backgroundColor = '#ffff00';
         }
     }
+    
+    // Update addon status display
+    updateAddonStatus();
+}
+
+function updateAddonStatus() {
+    const addons = [
+        { id: 'addon-wings', property: 'hasWings' },
+        { id: 'addon-nose', property: 'hasNose' },
+        { id: 'addon-cooling', property: 'hasCoolingSystem' }
+    ];
+    
+    addons.forEach(addon => {
+        const element = document.getElementById(addon.id);
+        if (element) {
+            const statusSpan = element.querySelector('span');
+            const isActive = gameState.shipUpgrades[addon.property];
+            statusSpan.textContent = isActive ? 'YES' : 'NO';
+            
+            if (isActive) {
+                element.classList.add('addon-active');
+            } else {
+                element.classList.remove('addon-active');
+            }
+        }
+    });
 }
 
 function drawBackground() {

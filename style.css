@@ -1,3 +1,8 @@
+:root {
+    --border-width: 4px;
+    --border-offset: 8px; /* 4px border on left + 4px border on right (or top + bottom) */
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -19,8 +24,8 @@ body {
     position: relative;
     width: 950px;
     height: 600px;
-    background: #001100;
-    border: 4px solid #0f0;
+    background: #000;
+    border: var(--border-width) solid #0f0;
     box-shadow: 0 0 20px #0f0;
 }
 
@@ -197,14 +202,14 @@ body {
 }
 
 #game-canvas {
-    width: 800px;
-    height: 600px;
+    width: calc(800px - var(--border-offset));
+    height: calc(600px - var(--border-offset));
     background: #000;
 }
 
 #hud {
     width: 150px;
-    height: 600px;
+    height: calc(600px - var(--border-offset));
     background: rgba(0, 0, 0, 0.95);
     border-left: 2px solid #0f0;
     display: flex;
@@ -275,7 +280,34 @@ body {
     text-shadow: 0 0 10px #ff0;
 }
 
+#addons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    font-size: 0.8em;
+}
+
+.addon-status {
+    display: flex;
+    justify-content: space-between;
+    color: #0a0;
+}
+
+.addon-status span {
+    font-weight: bold;
+}
+
+.addon-active {
+    color: #0f0;
+}
+
 @media (max-width: 850px) {
+    :root {
+        --border-width: 0px;
+        --border-offset: 0px;
+    }
+    
     #game-container {
         width: 100vw;
         height: 100vh;
