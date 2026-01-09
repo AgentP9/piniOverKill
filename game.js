@@ -1181,41 +1181,26 @@ function updateHUD() {
 }
 
 function updateAddonStatus() {
-    // Update Wings addon status
-    const wingsEl = document.getElementById('addon-wings');
-    if (wingsEl) {
-        const wingsStatus = wingsEl.querySelector('span');
-        wingsStatus.textContent = gameState.shipUpgrades.hasWings ? 'YES' : 'NO';
-        if (gameState.shipUpgrades.hasWings) {
-            wingsEl.classList.add('addon-active');
-        } else {
-            wingsEl.classList.remove('addon-active');
-        }
-    }
+    const addons = [
+        { id: 'addon-wings', property: 'hasWings' },
+        { id: 'addon-nose', property: 'hasNose' },
+        { id: 'addon-cooling', property: 'hasCoolingSystem' }
+    ];
     
-    // Update Nose addon status
-    const noseEl = document.getElementById('addon-nose');
-    if (noseEl) {
-        const noseStatus = noseEl.querySelector('span');
-        noseStatus.textContent = gameState.shipUpgrades.hasNose ? 'YES' : 'NO';
-        if (gameState.shipUpgrades.hasNose) {
-            noseEl.classList.add('addon-active');
-        } else {
-            noseEl.classList.remove('addon-active');
+    addons.forEach(addon => {
+        const element = document.getElementById(addon.id);
+        if (element) {
+            const statusSpan = element.querySelector('span');
+            const isActive = gameState.shipUpgrades[addon.property];
+            statusSpan.textContent = isActive ? 'YES' : 'NO';
+            
+            if (isActive) {
+                element.classList.add('addon-active');
+            } else {
+                element.classList.remove('addon-active');
+            }
         }
-    }
-    
-    // Update Cooling addon status
-    const coolingEl = document.getElementById('addon-cooling');
-    if (coolingEl) {
-        const coolingStatus = coolingEl.querySelector('span');
-        coolingStatus.textContent = gameState.shipUpgrades.hasCoolingSystem ? 'YES' : 'NO';
-        if (gameState.shipUpgrades.hasCoolingSystem) {
-            coolingEl.classList.add('addon-active');
-        } else {
-            coolingEl.classList.remove('addon-active');
-        }
-    }
+    });
 }
 
 function drawBackground() {

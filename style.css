@@ -199,14 +199,14 @@ body {
 }
 
 #game-canvas {
-    width: 792px;
-    height: 592px;
+    width: calc(800px - 8px);
+    height: calc(600px - 8px);
     background: #000;
 }
 
 #hud {
     width: 150px;
-    height: 592px;
+    height: calc(600px - 8px);
     background: rgba(0, 0, 0, 0.95);
     border-left: 2px solid #0f0;
     display: flex;
