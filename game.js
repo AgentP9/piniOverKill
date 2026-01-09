@@ -172,9 +172,12 @@ document.getElementById('restart-button').addEventListener('click', startGame);
 document.getElementById('menu-button').addEventListener('click', quitToMenu);
 
 // GodMode Toggle
-document.getElementById('godmode-checkbox').addEventListener('change', (e) => {
-    gameState.godMode = e.target.checked;
-});
+const godmodeCheckbox = document.getElementById('godmode-checkbox');
+if (godmodeCheckbox) {
+    godmodeCheckbox.addEventListener('change', (e) => {
+        gameState.godMode = e.target.checked;
+    });
+}
 
 // Keyboard Controls
 document.addEventListener('keydown', (e) => {
