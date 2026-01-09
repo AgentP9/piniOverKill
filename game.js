@@ -84,10 +84,12 @@ const CONFIG = {
         maxHeat: 100,
         cooldownRate: 0.8,
         cooldownRatePassive: 1.5,
+        passiveCoolingDelay: 500,
         overheatThreshold: 75,
+        cautionThresholdMultiplier: 0.7,
         fireRatePenalty: 1.8,
         lockoutDuration: 1500,
-        coolingSystemReduction: 0.4,
+        coolingSystemHeatMultiplier: 0.4,
         coolingSystemCooldownBonus: 1.3
     },
     wave: {
@@ -882,7 +884,7 @@ function fireBullet() {
     }
     
     // Increase heat after firing
-    const coolingMultiplier = gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemReduction : 1;
+    const coolingMultiplier = gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemHeatMultiplier : 1;
     const heatIncrease = weaponConfig.heatPerShot * coolingMultiplier;
     gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
     gameState.lastHeatGenerationTime = now;
@@ -1181,7 +1183,7 @@ function updateHUD() {
         } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
             // Warning state - approaching overheat
             heatFill.style.backgroundColor = '#ff6600';
-        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * 0.7) {
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
             // Caution state
             heatFill.style.backgroundColor = '#ff9900';
         } else {
@@ -1222,7 +1224,7 @@ function update() {
     // Weapon heat cooling with passive bonus
     const now = Date.now();
     const timeSinceLastHeat = now - gameState.lastHeatGenerationTime;
-    const isPassiveCooling = timeSinceLastHeat > 500; // 0.5 seconds since last shot
+    const isPassiveCooling = timeSinceLastHeat > CONFIG.overheat.passiveCoolingDelay;
     
     let cooldownRate = CONFIG.overheat.cooldownRate;
     if (isPassiveCooling) {
