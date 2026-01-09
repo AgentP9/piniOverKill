@@ -1,6 +1,6 @@
 :root {
     --border-width: 4px;
-    --border-offset: 8px; /* 2 * border-width for both sides */
+    --border-offset: 8px; /* 4px border on left + 4px border on right (or top + bottom) */
 }
 
 * {
