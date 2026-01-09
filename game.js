@@ -1437,6 +1437,8 @@ function update() {
 function render() {
     drawBackground();
     
+    const now = Date.now();
+    
     gameState.player.draw();
     gameState.enemies.forEach(enemy => enemy.draw());
     if (gameState.boss) {
@@ -1450,7 +1452,6 @@ function render() {
     
     // Draw repair bot indicator (small robot circling the ship)
     if (gameState.repairBotActive) {
-        const now = Date.now();
         const botAngle = (now / 500) % (Math.PI * 2); // Complete rotation every 0.5 seconds
         const botX = gameState.player.x + gameState.player.width / 2 + Math.cos(botAngle) * 35;
         const botY = gameState.player.y + gameState.player.height / 2 + Math.sin(botAngle) * 35;
@@ -1471,7 +1472,6 @@ function render() {
     }
     
     // Draw pickup notifications
-    const now = Date.now();
     gameState.pickupNotifications.forEach((notification, index) => {
         const age = now - notification.startTime;
         const opacity = Math.max(0, 1 - (age / CONFIG.powerup.notificationDuration));
