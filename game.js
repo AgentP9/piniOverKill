@@ -18,7 +18,7 @@ const CONFIG = {
             speed: 12,
             color: '#ff0000',
             description: 'Single mighty shot',
-            heatPerShot: 16
+            heatPerShot: 18
         },
         plasma: {
             name: 'Plasma',
@@ -27,7 +27,7 @@ const CONFIG = {
             speed: 8,
             color: '#00ffff',
             description: 'Moderate rate, medium damage',
-            heatPerShot: 20
+            heatPerShot: 12
         },
         railgun: {
             name: 'Railgun',
@@ -36,7 +36,7 @@ const CONFIG = {
             speed: 15,
             color: '#ffff00',
             description: 'High rate, low damage',
-            heatPerShot: 8
+            heatPerShot: 6
         },
         blaster: {
             name: 'Blaster',
@@ -48,7 +48,7 @@ const CONFIG = {
             spreadMultiplier: 10,
             color: '#ff8800',
             description: 'Shotgun-style spread',
-            heatPerShot: 10
+            heatPerShot: 14
         }
     },
     enemy: {
@@ -82,11 +82,13 @@ const CONFIG = {
     },
     overheat: {
         maxHeat: 100,
-        cooldownRate: 0.5,
-        overheatThreshold: 70,
-        fireRatePenalty: 2.5,
-        lockoutDuration: 2000,
-        coolingSystemReduction: 0.5
+        cooldownRate: 0.8,
+        cooldownRatePassive: 1.5,
+        overheatThreshold: 75,
+        fireRatePenalty: 1.8,
+        lockoutDuration: 1500,
+        coolingSystemReduction: 0.4,
+        coolingSystemCooldownBonus: 1.3
     },
     wave: {
         completionDelay: 3000
@@ -134,6 +136,7 @@ const gameState = {
     weaponHeat: 0,
     isWeaponLocked: false,
     weaponLockEndTime: 0,
+    lastHeatGenerationTime: 0,
     railgunContinuousFire: false,
     godMode: true
 };
@@ -789,6 +792,7 @@ function resetGame() {
     gameState.weaponHeat = 0;
     gameState.isWeaponLocked = false;
     gameState.weaponLockEndTime = 0;
+    gameState.lastHeatGenerationTime = 0;
     gameState.railgunContinuousFire = false;
     updateHUD();
 }
@@ -878,8 +882,10 @@ function fireBullet() {
     }
     
     // Increase heat after firing
-    const heatIncrease = weaponConfig.heatPerShot * (gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemReduction : 1);
+    const coolingMultiplier = gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemReduction : 1;
+    const heatIncrease = weaponConfig.heatPerShot * coolingMultiplier;
     gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
+    gameState.lastHeatGenerationTime = now;
     
     // Lock weapon if max heat reached
     if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
@@ -1169,11 +1175,15 @@ function updateHUD() {
     if (heatFill) {
         heatFill.style.width = heatPercent + '%';
         
-        // Change color based on heat level
+        // Change color based on heat level with smooth transitions
         if (gameState.isWeaponLocked) {
             heatFill.style.backgroundColor = '#ff0000';
         } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
-            heatFill.style.backgroundColor = '#ff8800';
+            // Warning state - approaching overheat
+            heatFill.style.backgroundColor = '#ff6600';
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * 0.7) {
+            // Caution state
+            heatFill.style.backgroundColor = '#ff9900';
         } else {
             heatFill.style.backgroundColor = '#ffff00';
         }
@@ -1209,8 +1219,22 @@ function update() {
         fireBullet();
     }
 
-    // Weapon heat cooling - always cool down, even when locked
-    gameState.weaponHeat = Math.max(0, gameState.weaponHeat - CONFIG.overheat.cooldownRate);
+    // Weapon heat cooling with passive bonus
+    const now = Date.now();
+    const timeSinceLastHeat = now - gameState.lastHeatGenerationTime;
+    const isPassiveCooling = timeSinceLastHeat > 500; // 0.5 seconds since last shot
+    
+    let cooldownRate = CONFIG.overheat.cooldownRate;
+    if (isPassiveCooling) {
+        cooldownRate = CONFIG.overheat.cooldownRatePassive;
+    }
+    
+    // Apply cooling system bonus
+    if (gameState.shipUpgrades.hasCoolingSystem) {
+        cooldownRate *= CONFIG.overheat.coolingSystemCooldownBonus;
+    }
+    
+    gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
 
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
