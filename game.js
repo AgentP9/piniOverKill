@@ -17,7 +17,8 @@ const CONFIG = {
             damage: 50,
             speed: 12,
             color: '#ff0000',
-            description: 'Single mighty shot'
+            description: 'Single mighty shot',
+            heatPerShot: 16
         },
         plasma: {
             name: 'Plasma',
@@ -25,7 +26,8 @@ const CONFIG = {
             damage: 15,
             speed: 8,
             color: '#00ffff',
-            description: 'Moderate rate, medium damage'
+            description: 'Moderate rate, medium damage',
+            heatPerShot: 20
         },
         railgun: {
             name: 'Railgun',
@@ -33,7 +35,8 @@ const CONFIG = {
             damage: 5,
             speed: 15,
             color: '#ffff00',
-            description: 'High rate, low damage'
+            description: 'High rate, low damage',
+            heatPerShot: 8
         },
         blaster: {
             name: 'Blaster',
@@ -44,7 +47,8 @@ const CONFIG = {
             spread: 0.3,
             spreadMultiplier: 10,
             color: '#ff8800',
-            description: 'Shotgun-style spread'
+            description: 'Shotgun-style spread',
+            heatPerShot: 10
         }
     },
     enemy: {
@@ -75,6 +79,14 @@ const CONFIG = {
         upgradeIncrement: 0.25,
         upgradeMaxCap: 2.5,
         noseShieldBoost: 50
+    },
+    overheat: {
+        maxHeat: 100,
+        cooldownRate: 0.5,
+        overheatThreshold: 70,
+        fireRatePenalty: 2.5,
+        lockoutDuration: 2000,
+        coolingSystemReduction: 0.5
     },
     wave: {
         completionDelay: 3000
@@ -114,10 +126,16 @@ const gameState = {
     },
     shipUpgrades: {
         hasWings: false,
-        hasNose: false
+        hasNose: false,
+        hasCoolingSystem: false
     },
     bossActive: false,
-    waveComplete: false
+    waveComplete: false,
+    weaponHeat: 0,
+    isWeaponLocked: false,
+    weaponLockEndTime: 0,
+    railgunContinuousFire: false,
+    godMode: true
 };
 
 // Canvas Setup
@@ -153,13 +171,26 @@ document.getElementById('quit-button').addEventListener('click', quitToMenu);
 document.getElementById('restart-button').addEventListener('click', startGame);
 document.getElementById('menu-button').addEventListener('click', quitToMenu);
 
+// GodMode Toggle
+const godmodeCheckbox = document.getElementById('godmode-checkbox');
+if (godmodeCheckbox) {
+    godmodeCheckbox.addEventListener('change', (e) => {
+        gameState.godMode = e.target.checked;
+    });
+}
+
 // Keyboard Controls
 document.addEventListener('keydown', (e) => {
     gameState.keys[e.key.toLowerCase()] = true;
     
     if (e.key === ' ' && !gameState.isPaused && !gameState.isGameOver) {
         e.preventDefault();
-        fireBullet();
+        // Toggle continuous fire for railgun, otherwise fire once
+        if (gameState.currentWeapon === 'railgun') {
+            gameState.railgunContinuousFire = !gameState.railgunContinuousFire;
+        } else {
+            fireBullet();
+        }
     }
     
     if (e.key === 'Escape') {
@@ -247,6 +278,16 @@ class Player {
             ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 5);
         }
 
+        // Draw cooling system (on roof/top of ship)
+        if (gameState.shipUpgrades.hasCoolingSystem) {
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x + this.width / 2 - 6, this.y + 5, 12, 8);
+            ctx.fillStyle = '#00aaff';
+            ctx.fillRect(this.x + this.width / 2 - 4, this.y + 7, 8, 1);
+            ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 6);
+        }
+
         // Draw shield indicator
         if (this.shield < this.maxShield) {
             ctx.strokeStyle = `rgba(0, 255, 0, ${this.shield / this.maxShield})`;
@@ -258,6 +299,9 @@ class Player {
     }
 
     takeDamage(damage) {
+        // GodMode prevents all damage
+        if (gameState.godMode) return;
+        
         this.shield -= damage;
         if (this.shield <= 0) {
             this.shield = 0;
@@ -593,7 +637,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shield', 'wings', 'nose'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -657,6 +701,18 @@ class Powerup {
                 ctx.fill();
                 ctx.fillStyle = '#0088ff';
                 ctx.fillRect(-4, 0, 8, 6);
+                break;
+            case 'cooling':
+                // Cooling system icon (fan/radiator on roof)
+                ctx.strokeStyle = '#00aaff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(-8, -8, 16, 16);
+                ctx.stroke();
+                ctx.fillStyle = '#00aaff';
+                // Draw fan blades
+                ctx.fillRect(-6, -1, 12, 2);
+                ctx.fillRect(-1, -6, 2, 12);
                 break;
         }
         
@@ -725,10 +781,15 @@ function resetGame() {
     };
     gameState.shipUpgrades = {
         hasWings: false,
-        hasNose: false
+        hasNose: false,
+        hasCoolingSystem: false
     };
     gameState.bossActive = false;
     gameState.waveComplete = false;
+    gameState.weaponHeat = 0;
+    gameState.isWeaponLocked = false;
+    gameState.weaponLockEndTime = 0;
+    gameState.railgunContinuousFire = false;
     updateHUD();
 }
 
@@ -773,7 +834,23 @@ function gameOver() {
 function fireBullet() {
     const now = Date.now();
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
-    const adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+    
+    // Check if weapon is locked due to overheating
+    if (gameState.isWeaponLocked) {
+        if (now >= gameState.weaponLockEndTime) {
+            gameState.isWeaponLocked = false;
+        } else {
+            return; // Weapon still locked
+        }
+    }
+    
+    // Apply fire rate penalty if overheating
+    let fireRateMultiplier = gameState.weaponUpgrades.rateOfFire;
+    if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
+        fireRateMultiplier = fireRateMultiplier / CONFIG.overheat.fireRatePenalty;
+    }
+    
+    const adjustedFireRate = weaponConfig.fireRate / fireRateMultiplier;
     
     if (now - gameState.lastFire < adjustedFireRate) return;
 
@@ -799,12 +876,26 @@ function fireBullet() {
             gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
         }
     }
+    
+    // Increase heat after firing
+    const heatIncrease = weaponConfig.heatPerShot * (gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemReduction : 1);
+    gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
+    
+    // Lock weapon if max heat reached
+    if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
+        gameState.isWeaponLocked = true;
+        gameState.weaponLockEndTime = now + CONFIG.overheat.lockoutDuration;
+        gameState.railgunContinuousFire = false; // Disable continuous fire if active
+    }
+    
+    updateHUD();
 }
 
 function switchWeapon() {
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     const currentIndex = weapons.indexOf(gameState.currentWeapon);
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
+    gameState.railgunContinuousFire = false; // Disable continuous fire when switching
     updateHUD();
 }
 
@@ -857,7 +948,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shield', 'wings', 'nose'];
+    const types = ['rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -901,6 +992,10 @@ function checkCollisions() {
     if (gameState.boss) {
         for (let i = gameState.bullets.length - 1; i >= 0; i--) {
             const bullet = gameState.bullets[i];
+            
+            // Check if boss still exists (could be destroyed by previous bullet)
+            if (!gameState.boss) break;
+            
             const boss = gameState.boss;
             
             if (bullet.x < boss.x + boss.width &&
@@ -1042,6 +1137,9 @@ function checkCollisions() {
                     player.maxShield += CONFIG.powerup.noseShieldBoost;
                     player.heal(CONFIG.powerup.noseShieldBoost);
                     break;
+                case 'cooling':
+                    gameState.shipUpgrades.hasCoolingSystem = true;
+                    break;
             }
             
             createExplosion(powerup.x + powerup.width / 2, powerup.y + powerup.height / 2, '#ffff00');
@@ -1054,10 +1152,32 @@ function updateHUD() {
     document.getElementById('score').textContent = gameState.score;
     document.getElementById('wave').textContent = gameState.wave;
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
-    document.getElementById('weapon-level').textContent = weaponConfig.name.toUpperCase();
+    let weaponText = weaponConfig.name.toUpperCase();
+    if (gameState.currentWeapon === 'railgun' && gameState.railgunContinuousFire) {
+        weaponText += ' [AUTO]';
+    }
+    document.getElementById('weapon-level').textContent = weaponText;
     
-    const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
-    document.getElementById('shield-fill').style.width = shieldPercent + '%';
+    if (gameState.player) {
+        const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
+        document.getElementById('shield-fill').style.width = shieldPercent + '%';
+    }
+    
+    // Update heat bar
+    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
+    const heatFill = document.getElementById('heat-fill');
+    if (heatFill) {
+        heatFill.style.width = heatPercent + '%';
+        
+        // Change color based on heat level
+        if (gameState.isWeaponLocked) {
+            heatFill.style.backgroundColor = '#ff0000';
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
+            heatFill.style.backgroundColor = '#ff8800';
+        } else {
+            heatFill.style.backgroundColor = '#ffff00';
+        }
+    }
 }
 
 function drawBackground() {
@@ -1083,6 +1203,14 @@ function update() {
     gameState.player.update();
     spawnEnemy();
     spawnAsteroid();
+
+    // Railgun continuous fire
+    if (gameState.railgunContinuousFire && gameState.currentWeapon === 'railgun') {
+        fireBullet();
+    }
+
+    // Weapon heat cooling - always cool down, even when locked
+    gameState.weaponHeat = Math.max(0, gameState.weaponHeat - CONFIG.overheat.cooldownRate);
 
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
