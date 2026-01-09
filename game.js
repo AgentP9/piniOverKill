@@ -17,7 +17,8 @@ const CONFIG = {
             damage: 50,
             speed: 12,
             color: '#ff0000',
-            description: 'Single mighty shot'
+            description: 'Single mighty shot',
+            heatPerShot: 8
         },
         plasma: {
             name: 'Plasma',
@@ -25,7 +26,8 @@ const CONFIG = {
             damage: 15,
             speed: 8,
             color: '#00ffff',
-            description: 'Moderate rate, medium damage'
+            description: 'Moderate rate, medium damage',
+            heatPerShot: 10
         },
         railgun: {
             name: 'Railgun',
@@ -33,7 +35,8 @@ const CONFIG = {
             damage: 5,
             speed: 15,
             color: '#ffff00',
-            description: 'High rate, low damage'
+            description: 'High rate, low damage',
+            heatPerShot: 3
         },
         blaster: {
             name: 'Blaster',
@@ -44,7 +47,8 @@ const CONFIG = {
             spread: 0.3,
             spreadMultiplier: 10,
             color: '#ff8800',
-            description: 'Shotgun-style spread'
+            description: 'Shotgun-style spread',
+            heatPerShot: 5
         }
     },
     enemy: {
@@ -78,11 +82,11 @@ const CONFIG = {
     },
     overheat: {
         maxHeat: 100,
-        heatPerShot: 8,
         cooldownRate: 0.5,
         overheatThreshold: 70,
         fireRatePenalty: 2.5,
-        lockoutDuration: 2000
+        lockoutDuration: 2000,
+        coolingSystemReduction: 0.5
     },
     wave: {
         completionDelay: 3000
@@ -122,7 +126,8 @@ const gameState = {
     },
     shipUpgrades: {
         hasWings: false,
-        hasNose: false
+        hasNose: false,
+        hasCoolingSystem: false
     },
     bossActive: false,
     waveComplete: false,
@@ -262,6 +267,16 @@ class Player {
             ctx.fillStyle = '#00ffff';
             ctx.fillRect(this.x + this.width / 2 - 8, this.y - 5, 16, 8);
             ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 5);
+        }
+
+        // Draw cooling system (on roof/top of ship)
+        if (gameState.shipUpgrades.hasCoolingSystem) {
+            ctx.strokeStyle = '#00aaff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(this.x + this.width / 2 - 6, this.y + 5, 12, 8);
+            ctx.fillStyle = '#00aaff';
+            ctx.fillRect(this.x + this.width / 2 - 4, this.y + 7, 8, 1);
+            ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 6);
         }
 
         // Draw shield indicator
@@ -610,7 +625,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shield', 'wings', 'nose'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -674,6 +689,18 @@ class Powerup {
                 ctx.fill();
                 ctx.fillStyle = '#0088ff';
                 ctx.fillRect(-4, 0, 8, 6);
+                break;
+            case 'cooling':
+                // Cooling system icon (fan/radiator on roof)
+                ctx.strokeStyle = '#00aaff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(-8, -8, 16, 16);
+                ctx.stroke();
+                ctx.fillStyle = '#00aaff';
+                // Draw fan blades
+                ctx.fillRect(-6, -1, 12, 2);
+                ctx.fillRect(-1, -6, 2, 12);
                 break;
         }
         
@@ -742,7 +769,8 @@ function resetGame() {
     };
     gameState.shipUpgrades = {
         hasWings: false,
-        hasNose: false
+        hasNose: false,
+        hasCoolingSystem: false
     };
     gameState.bossActive = false;
     gameState.waveComplete = false;
@@ -838,7 +866,8 @@ function fireBullet() {
     }
     
     // Increase heat after firing
-    gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + CONFIG.overheat.heatPerShot);
+    const heatIncrease = weaponConfig.heatPerShot * (gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemReduction : 1);
+    gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
     
     // Lock weapon if max heat reached
     if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
@@ -907,7 +936,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shield', 'wings', 'nose'];
+    const types = ['rateOfFire', 'damageRate', 'shield', 'wings', 'nose', 'cooling'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -952,6 +981,9 @@ function checkCollisions() {
         for (let i = gameState.bullets.length - 1; i >= 0; i--) {
             const bullet = gameState.bullets[i];
             const boss = gameState.boss;
+            
+            // Check if boss still exists (could be destroyed by previous bullet)
+            if (!boss) break;
             
             if (bullet.x < boss.x + boss.width &&
                 bullet.x + bullet.width > boss.x &&
@@ -1091,6 +1123,9 @@ function checkCollisions() {
                     gameState.shipUpgrades.hasNose = true;
                     player.maxShield += CONFIG.powerup.noseShieldBoost;
                     player.heal(CONFIG.powerup.noseShieldBoost);
+                    break;
+                case 'cooling':
+                    gameState.shipUpgrades.hasCoolingSystem = true;
                     break;
             }
             
