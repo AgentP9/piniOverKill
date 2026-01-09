@@ -26,10 +26,12 @@ body {
 
 .screen {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    bottom: 4px;
+    width: calc(100% - 8px);
+    height: calc(100% - 8px);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -197,14 +199,14 @@ body {
 }
 
 #game-canvas {
-    width: 800px;
-    height: 600px;
+    width: 792px;
+    height: 592px;
     background: #000;
 }
 
 #hud {
     width: 150px;
-    height: 600px;
+    height: 592px;
     background: rgba(0, 0, 0, 0.95);
     border-left: 2px solid #0f0;
     display: flex;
@@ -273,6 +275,28 @@ body {
 #final-wave {
     color: #ff0;
     text-shadow: 0 0 10px #ff0;
+}
+
+#addons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    font-size: 0.8em;
+}
+
+.addon-status {
+    display: flex;
+    justify-content: space-between;
+    color: #0a0;
+}
+
+.addon-status span {
+    font-weight: bold;
+}
+
+.addon-active {
+    color: #0f0;
 }
 
 @media (max-width: 850px) {
