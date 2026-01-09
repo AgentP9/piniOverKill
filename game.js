@@ -103,7 +103,7 @@ const CONFIG = {
         turret: {
             fireRatePerLevel: 50, // Fire rate reduction per level (faster)
             baseFireRate: 500, // Base fire rate in ms (level 1) - railgun intervals
-            damage: 5, // Railgun-style damage per shot (lower per shot, but higher DPS due to rapid fire)
+            damage: 5, // Railgun-style damage: 5 per shot vs old 15, but fires 4x faster = higher DPS (10 vs 7.5 at L1)
             speed: 15, // Railgun-style speed
             range: 0.5 // Half of playfield height
         }
@@ -754,7 +754,7 @@ class TurretBullet {
         this.x = x;
         this.y = y;
         this.width = 4;
-        this.height = 12;
+        this.height = 12; // Elongated bullet (4x12) for railgun aesthetic - matches railgun weapon style
         
         // Calculate direction to target
         const dx = targetX - x;
