@@ -980,10 +980,11 @@ function checkCollisions() {
     if (gameState.boss) {
         for (let i = gameState.bullets.length - 1; i >= 0; i--) {
             const bullet = gameState.bullets[i];
-            const boss = gameState.boss;
             
             // Check if boss still exists (could be destroyed by previous bullet)
-            if (!boss) break;
+            if (!gameState.boss) break;
+            
+            const boss = gameState.boss;
             
             if (bullet.x < boss.x + boss.width &&
                 bullet.x + bullet.width > boss.x &&
