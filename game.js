@@ -1510,7 +1510,7 @@ function checkCollisions() {
             if (drone.x < boss.x + boss.width &&
                 drone.x + drone.width > boss.x &&
                 drone.y < boss.y + boss.height &&
-                drone.y + boss.height > drone.y) {
+                drone.y + drone.height > boss.y) {
                 
                 // Remove drone and damage boss
                 gameState.kamikazeDrones.splice(i, 1);
