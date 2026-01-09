@@ -1373,20 +1373,28 @@ function update() {
     // Shield regeneration (after delay from last damage)
     const now = Date.now();
     const timeSinceLastDamage = now - gameState.lastDamageTime;
+    let hudNeedsUpdate = false;
+    
     if (timeSinceLastDamage > CONFIG.player.shieldRegenDelay && gameState.player.shield < gameState.player.maxShield) {
         gameState.player.shield = Math.min(gameState.player.maxShield, gameState.player.shield + CONFIG.player.shieldRegenRate);
-        updateHUD();
+        hudNeedsUpdate = true;
     }
 
     // Repair bot structure healing
     if (gameState.repairBotActive) {
         if (now < gameState.repairBotEndTime) {
             if (gameState.player.structure < gameState.player.maxStructure) {
-                gameState.player.repairStructure(CONFIG.powerup.repairBotHealRate);
+                gameState.player.structure = Math.min(gameState.player.maxStructure, gameState.player.structure + CONFIG.powerup.repairBotHealRate);
+                hudNeedsUpdate = true;
             }
         } else {
             gameState.repairBotActive = false;
         }
+    }
+    
+    // Update HUD once if any health values changed
+    if (hudNeedsUpdate) {
+        updateHUD();
     }
 
     // Weapon heat cooling with passive bonus
