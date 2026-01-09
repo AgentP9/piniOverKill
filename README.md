@@ -19,8 +19,8 @@ PiniOverKill is a retro-style space shooter featuring:
 - **Movement**: Use arrow keys or WASD to navigate your ship
 - **Shooting**: Press SPACE to fire your weapons
 - **Weapon switching**: Press TAB to switch between weapon types
-- **Shield system**: Your ship can absorb multiple hits before destruction
-- **Power-ups**: Collect weapon upgrades, shield repairs, and special weapons
+- **Health system**: Your ship has both Shield (regenerates over time) and Structure (requires repair)
+- **Power-ups**: Collect weapon upgrades, health repairs, and special enhancements
 
 ### Enemy Types
 - **Basic enemies**: Standard alien ships that fire at your position
@@ -28,9 +28,15 @@ PiniOverKill is a retro-style space shooter featuring:
 - **Progressive spawning**: Enemy difficulty increases with each wave
 
 ### Power-ups
-- **Weapon Upgrade** (Yellow): Increases your weapon level (up to 3 guns)
-- **Shield Repair** (Cyan): Restores 30 shield points
-- **Spread Shot** (Magenta): Temporary spread weapon for 10 seconds
+- **Fire Rate Upgrade** (Yellow Clock): Increases weapon fire rate
+- **Damage Upgrade** (Red/Yellow Square): Increases weapon damage
+- **Shield Heal** (Cyan Shield with +): Restores 30 shield points
+- **Shield Boost** (Cyan Shield with Arrow): Increases maximum shield capacity by 25
+- **Structure Repair** (Orange Wrench): Repairs 40 structure points
+- **Repair Bot** (Green Robot): Deploys a bot that repairs structure over 15 seconds
+- **Wing Cannons** (Green Wings): Adds side cannons to your ship
+- **Nose Armor** (Cyan Triangle): Increases shield capacity by 50
+- **Cooling System** (Blue Fan): Reduces weapon heat generation
 
 ## Docker Deployment
 
@@ -104,12 +110,13 @@ The application runs in a lightweight Docker container:
 
 ## Game Mechanics
 
-### Shield System
-- Your ship starts with 100 shield points
-- Enemy projectiles deal 20 damage
+### Health System
+- **Shield**: Starts at 100 points and regenerates automatically after 2 seconds without taking damage
+- **Structure**: Starts at 100 points and requires pickups to repair
+- Enemy projectiles deal 20 damage (to shield first, then structure)
 - Colliding with enemy ships deals 30 damage
-- Shield repairs restore 30 points
-- Game ends when shield reaches 0
+- Asteroids deal 40 damage
+- Game ends when structure reaches 0
 
 ### Scoring
 - Basic enemies: 10 points
