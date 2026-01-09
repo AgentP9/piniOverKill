@@ -303,6 +303,11 @@ body {
 }
 
 @media (max-width: 850px) {
+    :root {
+        --border-width: 0px;
+        --border-offset: 0px;
+    }
+    
     #game-container {
         width: 100vw;
         height: 100vh;
