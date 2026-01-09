@@ -89,6 +89,14 @@ const CONFIG = {
         repairBotHealRate: 0.3, // Structure points per frame
         notificationDuration: 2000 // 2 seconds
     },
+    kamikazeDrone: {
+        spawnRate: 3000, // Spawn every 3 seconds
+        speed: 4, // Speed when chasing enemies
+        damage: 30, // Damage on impact
+        explosionTimeMin: 2000, // Min time before random explosion (ms)
+        explosionTimeMax: 5000, // Max time before random explosion (ms)
+        dronesPerPickup: 5 // Number of drones per pickup
+    },
     overheat: {
         maxHeat: 100,
         cooldownRate: 0.8,
@@ -154,7 +162,11 @@ const gameState = {
     repairBotActive: false,
     repairBotEndTime: 0,
     lastDamageTime: 0,
-    pickupNotifications: [] // Array of notification objects {text, startTime}
+    pickupNotifications: [], // Array of notification objects {text, startTime}
+    kamikazeDrones: [], // Array of active kamikaze drones
+    kamikazeDroneActive: false,
+    kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
+    lastDroneSpawn: 0
 };
 
 // Canvas Setup
@@ -685,7 +697,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -826,6 +838,31 @@ class Powerup {
                 ctx.fillRect(-6, -1, 12, 2);
                 ctx.fillRect(-1, -6, 2, 12);
                 break;
+            case 'kamikaze':
+                // Kamikaze drone icon (explosive drone)
+                ctx.fillStyle = '#ff00ff';
+                // Drone diamond shape
+                ctx.beginPath();
+                ctx.moveTo(0, -8);
+                ctx.lineTo(8, 0);
+                ctx.lineTo(0, 8);
+                ctx.lineTo(-8, 0);
+                ctx.closePath();
+                ctx.fill();
+                // Center warning
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(-3, -3, 6, 6);
+                // Explosion effect lines
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < 4; i++) {
+                    const angle = (Math.PI / 2) * i + (Math.PI / 4);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
+                    ctx.stroke();
+                }
+                break;
         }
         
         ctx.restore();
@@ -857,6 +894,135 @@ class Particle {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.size, this.size);
         ctx.globalAlpha = 1;
+    }
+}
+
+// Kamikaze Drone Class
+class KamikazeDrone {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 12;
+        this.height = 12;
+        this.speed = CONFIG.kamikazeDrone.speed;
+        this.damage = CONFIG.kamikazeDrone.damage;
+        this.target = null;
+        this.color = '#ff00ff';
+        this.rotation = 0;
+        
+        // Set random explosion time
+        const explosionDelay = CONFIG.kamikazeDrone.explosionTimeMin + 
+            Math.random() * (CONFIG.kamikazeDrone.explosionTimeMax - CONFIG.kamikazeDrone.explosionTimeMin);
+        this.explosionTime = Date.now() + explosionDelay;
+        
+        // Find the nearest enemy as initial target
+        this.findTarget();
+    }
+
+    findTarget() {
+        // Find nearest enemy or boss
+        let nearestTarget = null;
+        let minDistance = Infinity;
+        
+        // Check regular enemies
+        gameState.enemies.forEach(enemy => {
+            const dx = enemy.x + enemy.width / 2 - this.x;
+            const dy = enemy.y + enemy.height / 2 - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestTarget = enemy;
+            }
+        });
+        
+        // Check boss
+        if (gameState.boss) {
+            const boss = gameState.boss;
+            const dx = boss.x + boss.width / 2 - this.x;
+            const dy = boss.y + boss.height / 2 - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestTarget = boss;
+            }
+        }
+        
+        this.target = nearestTarget;
+    }
+
+    update() {
+        const now = Date.now();
+        
+        // Check if explosion time reached
+        if (now >= this.explosionTime) {
+            createExplosion(this.x + this.width / 2, this.y + this.height / 2, this.color);
+            return false; // Remove drone
+        }
+        
+        // Check if target still exists
+        if (this.target) {
+            const targetExists = gameState.enemies.includes(this.target) || gameState.boss === this.target;
+            if (!targetExists) {
+                // Target was destroyed, just keep flying in the same direction
+                this.target = null;
+            }
+        }
+        
+        // Move towards target or continue in current direction
+        if (this.target) {
+            const dx = this.target.x + this.target.width / 2 - this.x;
+            const dy = this.target.y + this.target.height / 2 - this.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                this.x += (dx / distance) * this.speed;
+                this.y += (dy / distance) * this.speed;
+                this.rotation = Math.atan2(dy, dx);
+            }
+        } else {
+            // No target, continue flying upward
+            this.y -= this.speed;
+        }
+        
+        this.rotation += 0.1; // Spin the drone
+        
+        // Remove if off screen
+        return this.y > -this.height && this.y < CONFIG.canvas.height + this.height &&
+               this.x > -this.width && this.x < CONFIG.canvas.width + this.width;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(this.rotation);
+        
+        // Draw drone body (diamond shape)
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -6);
+        ctx.lineTo(6, 0);
+        ctx.lineTo(0, 6);
+        ctx.lineTo(-6, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw center
+        ctx.fillStyle = '#ffff00';
+        ctx.fillRect(-2, -2, 4, 4);
+        
+        // Draw propeller lines
+        ctx.strokeStyle = '#ff00ff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-8, 0);
+        ctx.lineTo(-6, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(8, 0);
+        ctx.lineTo(6, 0);
+        ctx.stroke();
+        
+        ctx.restore();
     }
 }
 
@@ -908,6 +1074,10 @@ function resetGame() {
     gameState.repairBotEndTime = 0;
     gameState.lastDamageTime = 0;
     gameState.pickupNotifications = [];
+    gameState.kamikazeDrones = [];
+    gameState.kamikazeDroneActive = false;
+    gameState.kamikazeDronesRemaining = 0;
+    gameState.lastDroneSpawn = 0;
     updateHUD();
 }
 
@@ -1070,7 +1240,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling'];
+    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -1288,10 +1458,86 @@ function checkCollisions() {
                     gameState.shipUpgrades.hasCoolingSystem = true;
                     showPickupNotification('COOLING SYSTEM INSTALLED');
                     break;
+                case 'kamikaze':
+                    gameState.kamikazeDroneActive = true;
+                    gameState.kamikazeDronesRemaining += CONFIG.kamikazeDrone.dronesPerPickup;
+                    gameState.lastDroneSpawn = Date.now();
+                    showPickupNotification(`KAMIKAZE DRONES ACTIVATED (x${CONFIG.kamikazeDrone.dronesPerPickup})`);
+                    break;
             }
             
             createExplosion(powerup.x + powerup.width / 2, powerup.y + powerup.height / 2, '#ffff00');
             updateHUD();
+        }
+    }
+
+    // Kamikaze Drones vs Enemies
+    for (let i = gameState.kamikazeDrones.length - 1; i >= 0; i--) {
+        const drone = gameState.kamikazeDrones[i];
+        
+        for (let j = gameState.enemies.length - 1; j >= 0; j--) {
+            const enemy = gameState.enemies[j];
+            
+            if (drone.x < enemy.x + enemy.width &&
+                drone.x + drone.width > enemy.x &&
+                drone.y < enemy.y + enemy.height &&
+                drone.y + drone.height > enemy.y) {
+                
+                // Remove drone and damage enemy
+                gameState.kamikazeDrones.splice(i, 1);
+                createExplosion(drone.x + drone.width / 2, drone.y + drone.height / 2, drone.color);
+                
+                if (enemy.takeDamage(drone.damage)) {
+                    gameState.enemies.splice(j, 1);
+                    gameState.score += enemy.points;
+                    gameState.enemiesDefeated++;
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color);
+                    spawnPowerup(enemy.x, enemy.y);
+                }
+                
+                updateHUD();
+                break;
+            }
+        }
+    }
+
+    // Kamikaze Drones vs Boss
+    if (gameState.boss) {
+        for (let i = gameState.kamikazeDrones.length - 1; i >= 0; i--) {
+            const drone = gameState.kamikazeDrones[i];
+            
+            // Check if boss still exists
+            if (!gameState.boss) break;
+            
+            const boss = gameState.boss;
+            
+            if (drone.x < boss.x + boss.width &&
+                drone.x + drone.width > boss.x &&
+                drone.y < boss.y + boss.height &&
+                drone.y + drone.height > boss.y) {
+                
+                // Remove drone and damage boss
+                gameState.kamikazeDrones.splice(i, 1);
+                createExplosion(drone.x + drone.width / 2, drone.y + drone.height / 2, drone.color);
+                
+                if (boss.takeDamage(drone.damage)) {
+                    gameState.score += boss.points;
+                    createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.color);
+                    spawnPowerup(boss.x, boss.y);
+                    gameState.boss = null;
+                    gameState.bossActive = false;
+                    gameState.waveComplete = true;
+                    // Start next wave after delay
+                    setTimeout(() => {
+                        gameState.wave++;
+                        gameState.waveComplete = false;
+                        gameState.enemiesInWave = 0;
+                        updateHUD();
+                    }, CONFIG.wave.completionDelay);
+                }
+                
+                updateHUD();
+            }
         }
     }
 }
@@ -1339,6 +1585,19 @@ function updateAddonStatus() {
             }
         }
     });
+    
+    // Update drone counter
+    const droneElement = document.getElementById('addon-drones');
+    if (droneElement) {
+        const statusSpan = droneElement.querySelector('span');
+        statusSpan.textContent = gameState.kamikazeDronesRemaining;
+        
+        if (gameState.kamikazeDronesRemaining > 0) {
+            droneElement.classList.add('addon-active');
+        } else {
+            droneElement.classList.remove('addon-active');
+        }
+    }
 }
 
 function drawBackground() {
@@ -1418,6 +1677,27 @@ function update() {
         return (now - notification.startTime) < CONFIG.powerup.notificationDuration;
     });
 
+    // Spawn kamikaze drones every 3 seconds when active
+    if (gameState.kamikazeDroneActive && gameState.kamikazeDronesRemaining > 0) {
+        if (now - gameState.lastDroneSpawn >= CONFIG.kamikazeDrone.spawnRate) {
+            const drone = new KamikazeDrone(
+                gameState.player.x + gameState.player.width / 2,
+                gameState.player.y
+            );
+            gameState.kamikazeDrones.push(drone);
+            gameState.kamikazeDronesRemaining--;
+            gameState.lastDroneSpawn = now;
+            
+            // Deactivate if no drones remaining
+            if (gameState.kamikazeDronesRemaining === 0) {
+                gameState.kamikazeDroneActive = false;
+            }
+        }
+    }
+
+    // Update kamikaze drones
+    gameState.kamikazeDrones = gameState.kamikazeDrones.filter(drone => drone.update());
+
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
 
@@ -1457,6 +1737,7 @@ function render() {
     gameState.enemyBullets.forEach(bullet => bullet.draw());
     gameState.powerups.forEach(powerup => powerup.draw());
     gameState.particles.forEach(particle => particle.draw());
+    gameState.kamikazeDrones.forEach(drone => drone.draw());
     
     // Draw repair bot indicator (small robot circling the ship)
     if (gameState.repairBotActive) {
