@@ -1110,8 +1110,10 @@ function updateHUD() {
     }
     document.getElementById('weapon-level').textContent = weaponText;
     
-    const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
-    document.getElementById('shield-fill').style.width = shieldPercent + '%';
+    if (gameState.player) {
+        const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
+        document.getElementById('shield-fill').style.width = shieldPercent + '%';
+    }
     
     // Update heat bar
     const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
