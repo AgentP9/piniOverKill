@@ -134,7 +134,8 @@ const gameState = {
     weaponHeat: 0,
     isWeaponLocked: false,
     weaponLockEndTime: 0,
-    railgunContinuousFire: false
+    railgunContinuousFire: false,
+    godMode: true
 };
 
 // Canvas Setup
@@ -169,6 +170,11 @@ document.getElementById('resume-button').addEventListener('click', resumeGame);
 document.getElementById('quit-button').addEventListener('click', quitToMenu);
 document.getElementById('restart-button').addEventListener('click', startGame);
 document.getElementById('menu-button').addEventListener('click', quitToMenu);
+
+// GodMode Toggle
+document.getElementById('godmode-checkbox').addEventListener('change', (e) => {
+    gameState.godMode = e.target.checked;
+});
 
 // Keyboard Controls
 document.addEventListener('keydown', (e) => {
@@ -290,6 +296,9 @@ class Player {
     }
 
     takeDamage(damage) {
+        // GodMode prevents all damage
+        if (gameState.godMode) return;
+        
         this.shield -= damage;
         if (this.shield <= 0) {
             this.shield = 0;
