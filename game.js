@@ -1184,9 +1184,16 @@ function fireBullet() {
 }
 
 function switchWeapon() {
-    // Prevent weapon switching if weapon is locked due to overheating
+    const now = Date.now();
+    
+    // Check if weapon lock has expired
     if (gameState.isWeaponLocked) {
-        return;
+        if (now >= gameState.weaponLockEndTime) {
+            gameState.isWeaponLocked = false;
+        } else {
+            // Weapon still locked, prevent switching
+            return;
+        }
     }
     
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
