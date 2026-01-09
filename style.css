@@ -24,22 +24,21 @@ body {
     position: relative;
     width: 950px;
     height: 600px;
-    background: #001100;
+    background: #000;
     border: var(--border-width) solid #0f0;
     box-shadow: 0 0 20px #0f0;
 }
 
 .screen {
     position: absolute;
-    top: var(--border-width);
-    left: var(--border-width);
-    right: var(--border-width);
-    bottom: var(--border-width);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #000;
 }
 
 #game-screen {
@@ -203,14 +202,14 @@ body {
 }
 
 #game-canvas {
-    width: calc(800px - var(--border-offset));
-    height: calc(600px - var(--border-offset));
+    width: 800px;
+    height: 600px;
     background: #000;
 }
 
 #hud {
     width: 150px;
-    height: calc(600px - var(--border-offset));
+    height: 600px;
     background: rgba(0, 0, 0, 0.95);
     border-left: 2px solid #0f0;
     display: flex;
