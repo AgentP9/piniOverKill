@@ -181,6 +181,7 @@ const gameState = {
     railgunContinuousFire: false,
     cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
     godMode: true,
+    fullEquipMode: false,
     repairBotActive: false,
     repairBotEndTime: 0,
     lastDamageTime: 0,
@@ -229,6 +230,14 @@ const godmodeCheckbox = document.getElementById('godmode-checkbox');
 if (godmodeCheckbox) {
     godmodeCheckbox.addEventListener('change', (e) => {
         gameState.godMode = e.target.checked;
+    });
+}
+
+// Full Equipment Toggle
+const fullequipCheckbox = document.getElementById('fullequip-checkbox');
+if (fullequipCheckbox) {
+    fullequipCheckbox.addEventListener('change', (e) => {
+        gameState.fullEquipMode = e.target.checked;
     });
 }
 
@@ -1183,6 +1192,22 @@ function resetGame() {
     gameState.kamikazeDroneActive = false;
     gameState.kamikazeDronesRemaining = 0;
     gameState.lastDroneSpawn = 0;
+    
+    // Apply full equipment if toggle is enabled
+    if (gameState.fullEquipMode) {
+        gameState.shipUpgrades = {
+            wingsLevel: CONFIG.addons.maxLevel,
+            noseLevel: CONFIG.addons.maxLevel,
+            coolingLevel: CONFIG.addons.maxLevel,
+            turretLevel: CONFIG.addons.maxLevel
+        };
+        // Boost player stats to max for all addons
+        gameState.player.maxStructure += CONFIG.addons.wings.structurePerLevel * CONFIG.addons.maxLevel;
+        gameState.player.structure = gameState.player.maxStructure;
+        gameState.player.maxShield += CONFIG.addons.nose.shieldPerLevel * CONFIG.addons.maxLevel;
+        gameState.player.shield = gameState.player.maxShield;
+    }
+    
     updateHUD();
 }
 
