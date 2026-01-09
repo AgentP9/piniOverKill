@@ -94,7 +94,8 @@ const CONFIG = {
         speed: 4, // Speed when chasing enemies
         damage: 30, // Damage on impact
         explosionTimeMin: 2000, // Min time before random explosion (ms)
-        explosionTimeMax: 5000 // Max time before random explosion (ms)
+        explosionTimeMax: 5000, // Max time before random explosion (ms)
+        dronesPerPickup: 5 // Number of drones per pickup
     },
     overheat: {
         maxHeat: 100,
@@ -164,6 +165,7 @@ const gameState = {
     pickupNotifications: [], // Array of notification objects {text, startTime}
     kamikazeDrones: [], // Array of active kamikaze drones
     kamikazeDroneActive: false,
+    kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
     lastDroneSpawn: 0
 };
 
@@ -1074,6 +1076,7 @@ function resetGame() {
     gameState.pickupNotifications = [];
     gameState.kamikazeDrones = [];
     gameState.kamikazeDroneActive = false;
+    gameState.kamikazeDronesRemaining = 0;
     gameState.lastDroneSpawn = 0;
     updateHUD();
 }
@@ -1457,8 +1460,9 @@ function checkCollisions() {
                     break;
                 case 'kamikaze':
                     gameState.kamikazeDroneActive = true;
+                    gameState.kamikazeDronesRemaining += CONFIG.kamikazeDrone.dronesPerPickup;
                     gameState.lastDroneSpawn = Date.now();
-                    showPickupNotification('KAMIKAZE DRONES ACTIVATED');
+                    showPickupNotification('KAMIKAZE DRONES ACTIVATED (x5)');
                     break;
             }
             
@@ -1581,6 +1585,19 @@ function updateAddonStatus() {
             }
         }
     });
+    
+    // Update drone counter
+    const droneElement = document.getElementById('addon-drones');
+    if (droneElement) {
+        const statusSpan = droneElement.querySelector('span');
+        statusSpan.textContent = gameState.kamikazeDronesRemaining;
+        
+        if (gameState.kamikazeDronesRemaining > 0) {
+            droneElement.classList.add('addon-active');
+        } else {
+            droneElement.classList.remove('addon-active');
+        }
+    }
 }
 
 function drawBackground() {
@@ -1661,14 +1678,20 @@ function update() {
     });
 
     // Spawn kamikaze drones every 3 seconds when active
-    if (gameState.kamikazeDroneActive) {
+    if (gameState.kamikazeDroneActive && gameState.kamikazeDronesRemaining > 0) {
         if (now - gameState.lastDroneSpawn >= CONFIG.kamikazeDrone.spawnRate) {
             const drone = new KamikazeDrone(
                 gameState.player.x + gameState.player.width / 2,
                 gameState.player.y
             );
             gameState.kamikazeDrones.push(drone);
+            gameState.kamikazeDronesRemaining--;
             gameState.lastDroneSpawn = now;
+            
+            // Deactivate if no drones remaining
+            if (gameState.kamikazeDronesRemaining === 0) {
+                gameState.kamikazeDroneActive = false;
+            }
         }
     }
 
