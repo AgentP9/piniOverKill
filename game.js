@@ -140,6 +140,7 @@ const gameState = {
     weaponLockEndTime: 0,
     lastHeatGenerationTime: 0,
     railgunContinuousFire: false,
+    cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
     godMode: true
 };
 
@@ -796,6 +797,7 @@ function resetGame() {
     gameState.weaponLockEndTime = 0;
     gameState.lastHeatGenerationTime = 0;
     gameState.railgunContinuousFire = false;
+    gameState.cooldownAnimationTriggered = false;
     updateHUD();
 }
 
@@ -1360,15 +1362,19 @@ function updateHeatBarVisuals() {
         }
     }
     
-    // Update cooldown overlay bar - show 3-second animation when locked
+    // Update cooldown overlay bar - show animation when locked
     if (cooldownFill) {
-        if (gameState.isWeaponLocked) {
-            // Trigger 3-second cooldown animation
+        if (gameState.isWeaponLocked && !gameState.cooldownAnimationTriggered) {
+            // Trigger cooldown animation only once when weapon first locks
+            gameState.cooldownAnimationTriggered = true;
             cooldownFill.style.animation = 'none';
             // Force reflow to restart animation
             void cooldownFill.offsetWidth;
-            cooldownFill.style.animation = 'cooldown-sweep 3s linear forwards';
-        } else {
+            const animationDuration = CONFIG.overheat.lockoutDuration / 1000; // Convert ms to seconds
+            cooldownFill.style.animation = `cooldown-sweep ${animationDuration}s linear forwards`;
+        } else if (!gameState.isWeaponLocked) {
+            // Reset animation trigger when weapon unlocks
+            gameState.cooldownAnimationTriggered = false;
             // Show static cooldown state based on heat
             cooldownFill.style.animation = 'none';
             const cooldownPercent = 100 - heatPercent;
