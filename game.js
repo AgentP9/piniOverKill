@@ -18,7 +18,7 @@ const CONFIG = {
             speed: 12,
             color: '#ff0000',
             description: 'Single mighty shot',
-            heatPerShot: 8
+            heatPerShot: 16
         },
         plasma: {
             name: 'Plasma',
@@ -27,7 +27,7 @@ const CONFIG = {
             speed: 8,
             color: '#00ffff',
             description: 'Moderate rate, medium damage',
-            heatPerShot: 10
+            heatPerShot: 20
         },
         railgun: {
             name: 'Railgun',
@@ -36,7 +36,7 @@ const CONFIG = {
             speed: 15,
             color: '#ffff00',
             description: 'High rate, low damage',
-            heatPerShot: 3
+            heatPerShot: 8
         },
         blaster: {
             name: 'Blaster',
@@ -48,7 +48,7 @@ const CONFIG = {
             spreadMultiplier: 10,
             color: '#ff8800',
             description: 'Shotgun-style spread',
-            heatPerShot: 5
+            heatPerShot: 10
         }
     },
     enemy: {
