@@ -206,6 +206,21 @@ body {
     transition: width 0.3s;
 }
 
+#heat-bar {
+    width: 100px;
+    height: 20px;
+    background: #332200;
+    border: 1px solid #ff0;
+    position: relative;
+}
+
+#heat-fill {
+    height: 100%;
+    width: 0%;
+    background: #ffff00;
+    transition: width 0.1s, background-color 0.3s;
+}
+
 .final-score,
 .final-wave {
     font-size: 1.5em;

@@ -76,6 +76,14 @@ const CONFIG = {
         upgradeMaxCap: 2.5,
         noseShieldBoost: 50
     },
+    overheat: {
+        maxHeat: 100,
+        heatPerShot: 8,
+        cooldownRate: 0.5,
+        overheatThreshold: 70,
+        fireRatePenalty: 2.5,
+        lockoutDuration: 2000
+    },
     wave: {
         completionDelay: 3000
     },
@@ -117,7 +125,11 @@ const gameState = {
         hasNose: false
     },
     bossActive: false,
-    waveComplete: false
+    waveComplete: false,
+    weaponHeat: 0,
+    isWeaponLocked: false,
+    weaponLockEndTime: 0,
+    railgunContinuousFire: false
 };
 
 // Canvas Setup
@@ -159,7 +171,12 @@ document.addEventListener('keydown', (e) => {
     
     if (e.key === ' ' && !gameState.isPaused && !gameState.isGameOver) {
         e.preventDefault();
-        fireBullet();
+        // Toggle continuous fire for railgun, otherwise fire once
+        if (gameState.currentWeapon === 'railgun') {
+            gameState.railgunContinuousFire = !gameState.railgunContinuousFire;
+        } else {
+            fireBullet();
+        }
     }
     
     if (e.key === 'Escape') {
@@ -729,6 +746,10 @@ function resetGame() {
     };
     gameState.bossActive = false;
     gameState.waveComplete = false;
+    gameState.weaponHeat = 0;
+    gameState.isWeaponLocked = false;
+    gameState.weaponLockEndTime = 0;
+    gameState.railgunContinuousFire = false;
     updateHUD();
 }
 
@@ -773,7 +794,23 @@ function gameOver() {
 function fireBullet() {
     const now = Date.now();
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
-    const adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+    
+    // Check if weapon is locked due to overheating
+    if (gameState.isWeaponLocked) {
+        if (now >= gameState.weaponLockEndTime) {
+            gameState.isWeaponLocked = false;
+        } else {
+            return; // Weapon still locked
+        }
+    }
+    
+    // Apply fire rate penalty if overheating
+    let fireRateMultiplier = gameState.weaponUpgrades.rateOfFire;
+    if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
+        fireRateMultiplier = fireRateMultiplier / CONFIG.overheat.fireRatePenalty;
+    }
+    
+    const adjustedFireRate = weaponConfig.fireRate / fireRateMultiplier;
     
     if (now - gameState.lastFire < adjustedFireRate) return;
 
@@ -799,12 +836,25 @@ function fireBullet() {
             gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
         }
     }
+    
+    // Increase heat after firing
+    gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + CONFIG.overheat.heatPerShot);
+    
+    // Lock weapon if max heat reached
+    if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
+        gameState.isWeaponLocked = true;
+        gameState.weaponLockEndTime = now + CONFIG.overheat.lockoutDuration;
+        gameState.railgunContinuousFire = false; // Disable continuous fire if active
+    }
+    
+    updateHUD();
 }
 
 function switchWeapon() {
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     const currentIndex = weapons.indexOf(gameState.currentWeapon);
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
+    gameState.railgunContinuousFire = false; // Disable continuous fire when switching
     updateHUD();
 }
 
@@ -1054,10 +1104,30 @@ function updateHUD() {
     document.getElementById('score').textContent = gameState.score;
     document.getElementById('wave').textContent = gameState.wave;
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
-    document.getElementById('weapon-level').textContent = weaponConfig.name.toUpperCase();
+    let weaponText = weaponConfig.name.toUpperCase();
+    if (gameState.currentWeapon === 'railgun' && gameState.railgunContinuousFire) {
+        weaponText += ' [AUTO]';
+    }
+    document.getElementById('weapon-level').textContent = weaponText;
     
     const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
     document.getElementById('shield-fill').style.width = shieldPercent + '%';
+    
+    // Update heat bar
+    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
+    const heatFill = document.getElementById('heat-fill');
+    if (heatFill) {
+        heatFill.style.width = heatPercent + '%';
+        
+        // Change color based on heat level
+        if (gameState.isWeaponLocked) {
+            heatFill.style.backgroundColor = '#ff0000';
+        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
+            heatFill.style.backgroundColor = '#ff8800';
+        } else {
+            heatFill.style.backgroundColor = '#ffff00';
+        }
+    }
 }
 
 function drawBackground() {
@@ -1083,6 +1153,16 @@ function update() {
     gameState.player.update();
     spawnEnemy();
     spawnAsteroid();
+
+    // Railgun continuous fire
+    if (gameState.railgunContinuousFire && gameState.currentWeapon === 'railgun') {
+        fireBullet();
+    }
+
+    // Weapon heat cooling
+    if (!gameState.isWeaponLocked) {
+        gameState.weaponHeat = Math.max(0, gameState.weaponHeat - CONFIG.overheat.cooldownRate);
+    }
 
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
