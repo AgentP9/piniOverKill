@@ -103,7 +103,7 @@ const CONFIG = {
         turret: {
             fireRatePerLevel: 50, // Fire rate reduction per level (faster)
             baseFireRate: 500, // Base fire rate in ms (level 1) - railgun intervals
-            damage: 5, // Railgun-style damage per shot
+            damage: 5, // Railgun-style damage per shot (lower per shot, but higher DPS due to rapid fire)
             speed: 15, // Railgun-style speed
             range: 0.5 // Half of playfield height
         }
