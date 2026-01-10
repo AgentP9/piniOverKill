@@ -761,7 +761,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze', 'turret'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret'
         this.speed = 1;
         this.rotation = 0;
     }
