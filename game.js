@@ -35,7 +35,7 @@ const CONFIG = {
         railgun: {
             name: 'Railgun',
             fireRate: 100,
-            damage: 5,
+            damage: 3,
             speed: 15,
             color: '#ffff00',
             description: 'High rate, low damage',
@@ -89,6 +89,29 @@ const CONFIG = {
         repairBotHealRate: 0.3, // Structure points per frame
         notificationDuration: 2000 // 2 seconds
     },
+    addons: {
+        maxLevel: 10,
+        wings: {
+            structurePerLevel: 10 // Structure increase per level
+        },
+        nose: {
+            shieldPerLevel: 10 // Shield increase per level
+        },
+        cooling: {
+            cooldownBonusPerLevel: 0.05 // 5% cooldown improvement per level
+        },
+        turret: {
+            fireRatePerLevel: 100, // Fire rate reduction per level (faster)
+            baseFireRate: 1000, // Base fire rate in ms (level 1) - enemy-style intervals
+            damage: 20, // Enemy-style damage per shot
+            speed: 3, // Enemy-style speed
+            range: 0.5, // Half of playfield height
+            burstSize: 5, // Number of shots per burst
+            burstDelay: 100, // Delay between shots in a burst (ms)
+            burstCooldown: 1000, // Cooldown after burst (ms)
+            predictionAccuracyPerLevel: 0.1 // 10% improvement per level in prediction accuracy
+        }
+    },
     kamikazeDrone: {
         spawnRate: 3000, // Spawn every 3 seconds
         speed: 4, // Speed when chasing enemies
@@ -131,6 +154,7 @@ const gameState = {
     asteroids: [],
     bullets: [],
     enemyBullets: [],
+    turretBullets: [],
     powerups: [],
     particles: [],
     keys: {},
@@ -146,10 +170,15 @@ const gameState = {
         damageRate: 1
     },
     shipUpgrades: {
-        hasWings: false,
-        hasNose: false,
-        hasCoolingSystem: false
+        wingsLevel: 0, // 0 = not installed, 1-10 = level
+        noseLevel: 0, // 0 = not installed, 1-10 = level
+        coolingLevel: 0, // 0 = not installed, 1-10 = level
+        turretLevel: 0 // 0 = not installed, 1-10 = level
     },
+    lastTurretFire: 0, // Track turret fire timing
+    turretBurstCount: 0, // Track shots in current burst
+    turretBurstTarget: null, // Track current burst target
+    turretInBurst: false, // Track if currently in burst mode
     bossActive: false,
     waveComplete: false,
     weaponHeat: 0,
@@ -159,6 +188,7 @@ const gameState = {
     railgunContinuousFire: false,
     cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
     godMode: true,
+    fullEquipMode: false,
     repairBotActive: false,
     repairBotEndTime: 0,
     lastDamageTime: 0,
@@ -207,6 +237,14 @@ const godmodeCheckbox = document.getElementById('godmode-checkbox');
 if (godmodeCheckbox) {
     godmodeCheckbox.addEventListener('change', (e) => {
         gameState.godMode = e.target.checked;
+    });
+}
+
+// Full Equipment Toggle
+const fullequipCheckbox = document.getElementById('fullequip-checkbox');
+if (fullequipCheckbox) {
+    fullequipCheckbox.addEventListener('change', (e) => {
+        gameState.fullEquipMode = e.target.checked;
     });
 }
 
@@ -287,17 +325,20 @@ class Player {
         ctx.fillRect(this.x + this.width / 2 - 5, this.y + 10, 10, 10);
 
         // Draw wings (upgraded if player has wings power-up)
-        if (gameState.shipUpgrades.hasWings) {
+        const wingsLevel = gameState.shipUpgrades.wingsLevel;
+        if (wingsLevel > 0) {
+            // Visual size increases with level (subtle effect)
+            const levelScale = 1 + (wingsLevel - 1) * 0.05;
             ctx.fillStyle = '#00ff00';
             // Left wing addon
-            ctx.fillRect(this.x - 15, this.y + this.height / 2, 15, 20);
+            ctx.fillRect(this.x - 15 * levelScale, this.y + this.height / 2, 15 * levelScale, 20 * levelScale);
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x - 13, this.y + this.height / 2 + 5, 3, 10);
+            ctx.fillRect(this.x - 13 * levelScale, this.y + this.height / 2 + 5, 3, 10);
             // Right wing addon
             ctx.fillStyle = '#00ff00';
-            ctx.fillRect(this.x + this.width, this.y + this.height / 2, 15, 20);
+            ctx.fillRect(this.x + this.width, this.y + this.height / 2, 15 * levelScale, 20 * levelScale);
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x + this.width + 10, this.y + this.height / 2 + 5, 3, 10);
+            ctx.fillRect(this.x + this.width + 10 * levelScale, this.y + this.height / 2 + 5, 3, 10);
         } else {
             ctx.fillStyle = '#00aa00';
             ctx.fillRect(this.x - 5, this.y + this.height / 2, 10, 15);
@@ -305,20 +346,38 @@ class Player {
         }
 
         // Draw nose upgrade (reinforced front)
-        if (gameState.shipUpgrades.hasNose) {
+        const noseLevel = gameState.shipUpgrades.noseLevel;
+        if (noseLevel > 0) {
+            // Visual enhancement increases with level
+            const levelScale = 1 + (noseLevel - 1) * 0.03;
             ctx.fillStyle = '#00ffff';
-            ctx.fillRect(this.x + this.width / 2 - 8, this.y - 5, 16, 8);
-            ctx.fillRect(this.x + this.width / 2 - 5, this.y - 10, 10, 5);
+            ctx.fillRect(this.x + this.width / 2 - 8 * levelScale, this.y - 5 * levelScale, 16 * levelScale, 8 * levelScale);
+            ctx.fillRect(this.x + this.width / 2 - 5 * levelScale, this.y - 10 * levelScale, 10 * levelScale, 5 * levelScale);
         }
 
         // Draw cooling system (on roof/top of ship)
-        if (gameState.shipUpgrades.hasCoolingSystem) {
+        const coolingLevel = gameState.shipUpgrades.coolingLevel;
+        if (coolingLevel > 0) {
+            // Visual enhancement increases with level
+            const levelScale = 1 + (coolingLevel - 1) * 0.04;
             ctx.strokeStyle = '#00aaff';
             ctx.lineWidth = 1;
-            ctx.strokeRect(this.x + this.width / 2 - 6, this.y + 5, 12, 8);
+            ctx.strokeRect(this.x + this.width / 2 - 6 * levelScale, this.y + 5, 12 * levelScale, 8 * levelScale);
             ctx.fillStyle = '#00aaff';
-            ctx.fillRect(this.x + this.width / 2 - 4, this.y + 7, 8, 1);
-            ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 6);
+            ctx.fillRect(this.x + this.width / 2 - 4 * levelScale, this.y + 7, 8 * levelScale, 1);
+            ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 6 * levelScale);
+        }
+
+        // Draw turret (on top of ship)
+        const turretLevel = gameState.shipUpgrades.turretLevel;
+        if (turretLevel > 0) {
+            const levelScale = 1 + (turretLevel - 1) * 0.03;
+            ctx.fillStyle = '#ff8800';
+            // Turret base
+            ctx.fillRect(this.x + this.width / 2 - 5 * levelScale, this.y + 15, 10 * levelScale, 6 * levelScale);
+            // Turret barrel
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillRect(this.x + this.width / 2 - 2, this.y + 10, 4, 8 * levelScale);
         }
 
         // Draw shield indicator
@@ -371,6 +430,12 @@ class Player {
     }
 
     repairStructure(amount) {
+        this.structure = Math.min(this.maxStructure, this.structure + amount);
+        updateHUD();
+    }
+
+    boostStructure(amount) {
+        this.maxStructure += amount;
         this.structure = Math.min(this.maxStructure, this.structure + amount);
         updateHUD();
     }
@@ -690,6 +755,43 @@ class EnemyBullet {
     }
 }
 
+// Turret Bullet Class
+class TurretBullet {
+    constructor(x, y, targetX, targetY) {
+        this.x = x;
+        this.y = y;
+        this.width = 4;
+        this.height = 8; // Enemy-style bullet dimensions
+        
+        // Calculate direction to target
+        const dx = targetX - x;
+        const dy = targetY - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        this.vx = (dx / distance) * CONFIG.addons.turret.speed;
+        this.vy = (dy / distance) * CONFIG.addons.turret.speed;
+        this.damage = CONFIG.addons.turret.damage;
+        this.color = '#ff0000'; // Red color for enemy-style turret bullets
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        return this.y > -this.height && 
+               this.y < CONFIG.canvas.height + this.height &&
+               this.x > -this.width && 
+               this.x < CONFIG.canvas.width + this.width;
+    }
+
+    draw() {
+        // Enemy-style bullet rendering (circular)
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
 // Powerup Class
 class Powerup {
     constructor(x, y, type) {
@@ -697,7 +799,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze', 'turret'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -862,6 +964,21 @@ class Powerup {
                     ctx.lineTo(Math.cos(angle) * 10, Math.sin(angle) * 10);
                     ctx.stroke();
                 }
+                break;
+            case 'turret':
+                // Turret addon icon (gun turret)
+                ctx.fillStyle = '#ff8800';
+                // Turret base
+                ctx.fillRect(-6, -2, 12, 8);
+                // Turret barrel
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillRect(-2, -8, 4, 10);
+                // Turret tip
+                ctx.fillRect(-3, -10, 6, 2);
+                // Side details
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(-7, 0, 2, 4);
+                ctx.fillRect(5, 0, 2, 4);
                 break;
         }
         
@@ -1044,6 +1161,7 @@ function resetGame() {
     gameState.asteroids = [];
     gameState.bullets = [];
     gameState.enemyBullets = [];
+    gameState.turretBullets = [];
     gameState.powerups = [];
     gameState.particles = [];
     gameState.lastFire = 0;
@@ -1058,10 +1176,15 @@ function resetGame() {
         damageRate: 1
     };
     gameState.shipUpgrades = {
-        hasWings: false,
-        hasNose: false,
-        hasCoolingSystem: false
+        wingsLevel: 0,
+        noseLevel: 0,
+        coolingLevel: 0,
+        turretLevel: 0
     };
+    gameState.lastTurretFire = 0;
+    gameState.turretBurstCount = 0;
+    gameState.turretBurstTarget = null;
+    gameState.turretInBurst = false;
     gameState.bossActive = false;
     gameState.waveComplete = false;
     gameState.weaponHeat = 0;
@@ -1078,6 +1201,22 @@ function resetGame() {
     gameState.kamikazeDroneActive = false;
     gameState.kamikazeDronesRemaining = 0;
     gameState.lastDroneSpawn = 0;
+    
+    // Apply full equipment if toggle is enabled
+    if (gameState.fullEquipMode) {
+        gameState.shipUpgrades = {
+            wingsLevel: CONFIG.addons.maxLevel,
+            noseLevel: CONFIG.addons.maxLevel,
+            coolingLevel: CONFIG.addons.maxLevel,
+            turretLevel: CONFIG.addons.maxLevel
+        };
+        // Boost player stats to max for all addons
+        gameState.player.maxStructure += CONFIG.addons.wings.structurePerLevel * CONFIG.addons.maxLevel;
+        gameState.player.structure = gameState.player.maxStructure;
+        gameState.player.maxShield += CONFIG.addons.nose.shieldPerLevel * CONFIG.addons.maxLevel;
+        gameState.player.shield = gameState.player.maxShield;
+    }
+    
     updateHUD();
 }
 
@@ -1159,14 +1298,18 @@ function fireBullet() {
         gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
         
         // Wings addon shoots from sides
-        if (gameState.shipUpgrades.hasWings) {
+        const wingsLevel = gameState.shipUpgrades.wingsLevel;
+        if (wingsLevel > 0) {
             gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
             gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
         }
     }
     
     // Increase heat after firing
-    const coolingMultiplier = gameState.shipUpgrades.hasCoolingSystem ? CONFIG.overheat.coolingSystemHeatMultiplier : 1;
+    const coolingLevel = gameState.shipUpgrades.coolingLevel;
+    // Base cooling multiplier, then apply level bonus additively
+    const coolingMultiplier = coolingLevel > 0 ? 
+        CONFIG.overheat.coolingSystemHeatMultiplier * Math.max(0.3, 1 - coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel) : 1;
     const heatIncrease = weaponConfig.heatPerShot * coolingMultiplier;
     gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
     gameState.lastHeatGenerationTime = now;
@@ -1201,6 +1344,87 @@ function switchWeapon() {
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
     gameState.railgunContinuousFire = false; // Disable continuous fire when switching
     updateHUD();
+}
+
+function fireTurret() {
+    // Find nearest enemy within range
+    const maxRange = CONFIG.canvas.height * CONFIG.addons.turret.range;
+    let nearestEnemy = null;
+    let minDistance = maxRange;
+    
+    const player = gameState.player;
+    const playerCenterX = player.x + player.width / 2;
+    const playerCenterY = player.y + player.height / 2;
+    
+    // Check regular enemies
+    gameState.enemies.forEach(enemy => {
+        const enemyCenterX = enemy.x + enemy.width / 2;
+        const enemyCenterY = enemy.y + enemy.height / 2;
+        const dx = enemyCenterX - playerCenterX;
+        const dy = enemyCenterY - playerCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestEnemy = enemy;
+        }
+    });
+    
+    // Check boss
+    if (gameState.boss) {
+        const boss = gameState.boss;
+        const bossCenterX = boss.x + boss.width / 2;
+        const bossCenterY = boss.y + boss.height / 2;
+        const dx = bossCenterX - playerCenterX;
+        const dy = bossCenterY - playerCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearestEnemy = boss;
+        }
+    }
+    
+    // Fire at nearest enemy if found (with level-based predictive aiming)
+    if (nearestEnemy) {
+        const enemyCenterX = nearestEnemy.x + nearestEnemy.width / 2;
+        const enemyCenterY = nearestEnemy.y + nearestEnemy.height / 2;
+        
+        // Calculate predictive aim with level-based accuracy
+        const turretLevel = gameState.shipUpgrades.turretLevel;
+        const predictionAccuracy = Math.min(1, 0.5 + turretLevel * CONFIG.addons.turret.predictionAccuracyPerLevel);
+        
+        // Estimate time for bullet to reach target
+        const dx = enemyCenterX - playerCenterX;
+        const dy = enemyCenterY - playerCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const bulletSpeed = CONFIG.addons.turret.speed;
+        const timeToImpact = distance / bulletSpeed;
+        
+        // Predict enemy position based on their velocity with level-based accuracy
+        let predictedX = enemyCenterX;
+        let predictedY = enemyCenterY;
+        
+        if (nearestEnemy.speed !== undefined) {
+            // Regular enemy or boss moving downward
+            if (gameState.boss === nearestEnemy) {
+                // Boss moves horizontally
+                const bossVx = nearestEnemy.moveDirection * nearestEnemy.speed;
+                predictedX += bossVx * timeToImpact * predictionAccuracy;
+            } else {
+                // Regular enemy moves downward
+                predictedY += nearestEnemy.speed * timeToImpact * predictionAccuracy;
+            }
+        }
+        
+        const bullet = new TurretBullet(
+            playerCenterX,
+            playerCenterY,
+            predictedX,
+            predictedY
+        );
+        gameState.turretBullets.push(bullet);
+    }
 }
 
 function spawnEnemy() {
@@ -1252,7 +1476,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze'];
+    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze', 'turret'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -1364,6 +1588,99 @@ function checkCollisions() {
         }
     }
 
+    // Turret Bullets vs Enemies
+    for (let i = gameState.turretBullets.length - 1; i >= 0; i--) {
+        const bullet = gameState.turretBullets[i];
+        
+        for (let j = gameState.enemies.length - 1; j >= 0; j--) {
+            const enemy = gameState.enemies[j];
+            
+            if (bullet.x < enemy.x + enemy.width &&
+                bullet.x + bullet.width > enemy.x &&
+                bullet.y < enemy.y + enemy.height &&
+                bullet.y + bullet.height > enemy.y) {
+                
+                gameState.turretBullets.splice(i, 1);
+                
+                if (enemy.takeDamage(bullet.damage)) {
+                    gameState.enemies.splice(j, 1);
+                    gameState.score += enemy.points;
+                    gameState.enemiesDefeated++;
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color);
+                    spawnPowerup(enemy.x, enemy.y);
+                }
+                
+                updateHUD();
+                break;
+            }
+        }
+    }
+
+    // Turret Bullets vs Boss
+    if (gameState.boss) {
+        for (let i = gameState.turretBullets.length - 1; i >= 0; i--) {
+            const bullet = gameState.turretBullets[i];
+            
+            // Check if boss still exists
+            if (!gameState.boss) break;
+            
+            const boss = gameState.boss;
+            
+            if (bullet.x < boss.x + boss.width &&
+                bullet.x + bullet.width > boss.x &&
+                bullet.y < boss.y + boss.height &&
+                bullet.y + bullet.height > boss.y) {
+                
+                gameState.turretBullets.splice(i, 1);
+                
+                if (boss.takeDamage(bullet.damage)) {
+                    gameState.score += boss.points;
+                    createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.color);
+                    spawnPowerup(boss.x, boss.y);
+                    gameState.boss = null;
+                    gameState.bossActive = false;
+                    gameState.waveComplete = true;
+                    // Start next wave after delay
+                    setTimeout(() => {
+                        gameState.wave++;
+                        gameState.waveComplete = false;
+                        gameState.enemiesInWave = 0;
+                        updateHUD();
+                    }, CONFIG.wave.completionDelay);
+                }
+                
+                updateHUD();
+            }
+        }
+    }
+
+    // Turret Bullets vs Asteroids
+    for (let i = gameState.turretBullets.length - 1; i >= 0; i--) {
+        const bullet = gameState.turretBullets[i];
+        
+        for (let j = gameState.asteroids.length - 1; j >= 0; j--) {
+            const asteroid = gameState.asteroids[j];
+            
+            if (bullet.x < asteroid.x + asteroid.width &&
+                bullet.x + bullet.width > asteroid.x &&
+                bullet.y < asteroid.y + asteroid.height &&
+                bullet.y + bullet.height > asteroid.y) {
+                
+                gameState.turretBullets.splice(i, 1);
+                
+                if (asteroid.takeDamage(bullet.damage)) {
+                    gameState.asteroids.splice(j, 1);
+                    gameState.score += asteroid.points;
+                    createExplosion(asteroid.x + asteroid.width / 2, asteroid.y + asteroid.height / 2, '#888888');
+                    spawnPowerup(asteroid.x, asteroid.y);
+                }
+                
+                updateHUD();
+                break;
+            }
+        }
+    }
+
     // Enemy Bullets vs Player
     for (let i = gameState.enemyBullets.length - 1; i >= 0; i--) {
         const bullet = gameState.enemyBullets[i];
@@ -1457,18 +1774,44 @@ function checkCollisions() {
                     showPickupNotification('REPAIR BOT DEPLOYED');
                     break;
                 case 'wings':
-                    gameState.shipUpgrades.hasWings = true;
-                    showPickupNotification('WING CANNONS INSTALLED');
+                    if (gameState.shipUpgrades.wingsLevel < CONFIG.addons.maxLevel) {
+                        gameState.shipUpgrades.wingsLevel++;
+                        const level = gameState.shipUpgrades.wingsLevel;
+                        // Increase structure with each level
+                        player.boostStructure(CONFIG.addons.wings.structurePerLevel);
+                        showPickupNotification(`WINGS LEVEL ${level} - STRUCTURE BOOST`);
+                    } else {
+                        showPickupNotification('WINGS MAX LEVEL');
+                    }
                     break;
                 case 'nose':
-                    gameState.shipUpgrades.hasNose = true;
-                    player.maxShield += CONFIG.powerup.noseShieldBoost;
-                    player.healShield(CONFIG.powerup.noseShieldBoost);
-                    showPickupNotification('NOSE ARMOR INSTALLED');
+                    if (gameState.shipUpgrades.noseLevel < CONFIG.addons.maxLevel) {
+                        gameState.shipUpgrades.noseLevel++;
+                        const level = gameState.shipUpgrades.noseLevel;
+                        // Increase shield with each level
+                        player.boostShield(CONFIG.addons.nose.shieldPerLevel);
+                        showPickupNotification(`NOSE LEVEL ${level} - SHIELD BOOST`);
+                    } else {
+                        showPickupNotification('NOSE MAX LEVEL');
+                    }
                     break;
                 case 'cooling':
-                    gameState.shipUpgrades.hasCoolingSystem = true;
-                    showPickupNotification('COOLING SYSTEM INSTALLED');
+                    if (gameState.shipUpgrades.coolingLevel < CONFIG.addons.maxLevel) {
+                        gameState.shipUpgrades.coolingLevel++;
+                        const level = gameState.shipUpgrades.coolingLevel;
+                        showPickupNotification(`COOLING LEVEL ${level} - FASTER COOLDOWN`);
+                    } else {
+                        showPickupNotification('COOLING MAX LEVEL');
+                    }
+                    break;
+                case 'turret':
+                    if (gameState.shipUpgrades.turretLevel < CONFIG.addons.maxLevel) {
+                        gameState.shipUpgrades.turretLevel++;
+                        const level = gameState.shipUpgrades.turretLevel;
+                        showPickupNotification(`TURRET LEVEL ${level} - FASTER FIRE RATE`);
+                    } else {
+                        showPickupNotification('TURRET MAX LEVEL');
+                    }
                     break;
                 case 'kamikaze':
                     gameState.kamikazeDroneActive = true;
@@ -1578,19 +1921,20 @@ function updateHUD() {
 
 function updateAddonStatus() {
     const addons = [
-        { id: 'addon-wings', property: 'hasWings' },
-        { id: 'addon-nose', property: 'hasNose' },
-        { id: 'addon-cooling', property: 'hasCoolingSystem' }
+        { id: 'addon-wings', levelProperty: 'wingsLevel' },
+        { id: 'addon-nose', levelProperty: 'noseLevel' },
+        { id: 'addon-cooling', levelProperty: 'coolingLevel' },
+        { id: 'addon-turret', levelProperty: 'turretLevel' }
     ];
     
     addons.forEach(addon => {
         const element = document.getElementById(addon.id);
         if (element) {
             const statusSpan = element.querySelector('span');
-            const isActive = gameState.shipUpgrades[addon.property];
-            statusSpan.textContent = isActive ? 'YES' : 'NO';
+            const level = gameState.shipUpgrades[addon.levelProperty];
+            statusSpan.textContent = level > 0 ? `L${level}` : 'NO';
             
-            if (isActive) {
+            if (level > 0) {
                 element.classList.add('addon-active');
             } else {
                 element.classList.remove('addon-active');
@@ -1677,12 +2021,95 @@ function update() {
         cooldownRate = CONFIG.overheat.cooldownRatePassive;
     }
     
-    // Apply cooling system bonus
-    if (gameState.shipUpgrades.hasCoolingSystem) {
-        cooldownRate *= CONFIG.overheat.coolingSystemCooldownBonus;
+    // Apply cooling system bonus (additive, not multiplicative)
+    const coolingLevel = gameState.shipUpgrades.coolingLevel;
+    if (coolingLevel > 0) {
+        // Base bonus + level bonus, capped at 3x improvement
+        const coolingBonus = Math.min(3.0, CONFIG.overheat.coolingSystemCooldownBonus + coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel);
+        cooldownRate *= coolingBonus;
     }
     
     gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
+
+    // Turret auto-firing with burst mode
+    const turretLevel = gameState.shipUpgrades.turretLevel;
+    if (turretLevel > 0) {
+        // Find current target to check if it changed
+        const maxRange = CONFIG.canvas.height * CONFIG.addons.turret.range;
+        let currentTarget = null;
+        let minDistance = maxRange;
+        
+        const player = gameState.player;
+        const playerCenterX = player.x + player.width / 2;
+        const playerCenterY = player.y + player.height / 2;
+        
+        // Find nearest enemy
+        gameState.enemies.forEach(enemy => {
+            const dx = (enemy.x + enemy.width / 2) - playerCenterX;
+            const dy = (enemy.y + enemy.height / 2) - playerCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                currentTarget = enemy;
+            }
+        });
+        
+        if (gameState.boss) {
+            const dx = (gameState.boss.x + gameState.boss.width / 2) - playerCenterX;
+            const dy = (gameState.boss.y + gameState.boss.height / 2) - playerCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                currentTarget = gameState.boss;
+            }
+        }
+        
+        // Check if target changed (reset burst if it did)
+        if (currentTarget !== gameState.turretBurstTarget) {
+            gameState.turretBurstCount = 0;
+            gameState.turretBurstTarget = currentTarget;
+            gameState.turretInBurst = false;
+        }
+        
+        if (currentTarget) {
+            // Determine timing based on burst state
+            let fireDelay;
+            if (gameState.turretInBurst && gameState.turretBurstCount < CONFIG.addons.turret.burstSize) {
+                // In burst mode - rapid fire between shots
+                fireDelay = CONFIG.addons.turret.burstDelay;
+            } else if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
+                // Burst complete - in cooldown period
+                fireDelay = CONFIG.addons.turret.burstCooldown;
+            } else {
+                // Not in burst - ready to start new burst
+                fireDelay = 0; // Fire immediately
+            }
+            
+            if (now - gameState.lastTurretFire >= fireDelay) {
+                fireTurret();
+                gameState.lastTurretFire = now;
+                
+                if (gameState.turretBurstCount < CONFIG.addons.turret.burstSize) {
+                    // Increment burst count
+                    gameState.turretBurstCount++;
+                    gameState.turretInBurst = true;
+                    
+                    if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
+                        // Burst just completed - enter cooldown
+                        gameState.turretInBurst = false;
+                    }
+                } else {
+                    // Cooldown complete - reset for next burst
+                    gameState.turretBurstCount = 0;
+                    gameState.turretInBurst = false;
+                }
+            }
+        } else {
+            // No target - reset burst state
+            gameState.turretBurstCount = 0;
+            gameState.turretInBurst = false;
+            gameState.turretBurstTarget = null;
+        }
+    }
 
     // Update pickup notifications (remove expired ones)
     gameState.pickupNotifications = gameState.pickupNotifications.filter(notification => {
@@ -1724,6 +2151,7 @@ function update() {
     // Update bullets
     gameState.bullets = gameState.bullets.filter(bullet => bullet.update());
     gameState.enemyBullets = gameState.enemyBullets.filter(bullet => bullet.update());
+    gameState.turretBullets = gameState.turretBullets.filter(bullet => bullet.update());
 
     // Update powerups
     gameState.powerups = gameState.powerups.filter(powerup => powerup.update());
@@ -1747,6 +2175,7 @@ function render() {
     gameState.asteroids.forEach(asteroid => asteroid.draw());
     gameState.bullets.forEach(bullet => bullet.draw());
     gameState.enemyBullets.forEach(bullet => bullet.draw());
+    gameState.turretBullets.forEach(bullet => bullet.draw());
     gameState.powerups.forEach(powerup => powerup.draw());
     gameState.particles.forEach(particle => particle.draw());
     gameState.kamikazeDrones.forEach(drone => drone.draw());
