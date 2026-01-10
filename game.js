@@ -87,6 +87,13 @@ const CONFIG = {
     },
     addons: {
         maxLevel: 10,
+        // Visual scaling factors per level
+        visualScaling: {
+            wings: 0.05,  // 5% size increase per level
+            nose: 0.04,   // 4% size increase per level
+            turret: 0.04, // 4% size increase per level
+            maxLevelIndicatorLights: 5  // Maximum number of level indicator lights to show
+        },
         wings: {
             structurePerLevel: 10 // Structure increase per level
         },
@@ -292,7 +299,7 @@ class Player {
         const wingsLevel = gameState.shipUpgrades.wingsLevel;
         if (wingsLevel > 0) {
             // Enhanced wing cannons with level-based visual improvements
-            const levelScale = 1 + (wingsLevel - 1) * 0.05;
+            const levelScale = 1 + (wingsLevel - 1) * CONFIG.addons.visualScaling.wings;
             const wingWidth = 15 * levelScale;
             const wingHeight = 22 * levelScale;
             
@@ -309,8 +316,9 @@ class Player {
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(this.x - wingWidth + 5, this.y + this.height / 2 + 4, 4, 8);
             // Level indicator lights
-            for (let i = 0; i < Math.min(wingsLevel, 5); i++) {
-                ctx.fillStyle = wingsLevel === 10 ? '#ffff00' : '#00ff00';
+            const maxLights = CONFIG.addons.visualScaling.maxLevelIndicatorLights;
+            for (let i = 0; i < Math.min(wingsLevel, maxLights); i++) {
+                ctx.fillStyle = wingsLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
                 ctx.fillRect(this.x - wingWidth + 6, this.y + this.height / 2 + 14 + i * 1.5, 2, 1);
             }
             
@@ -323,8 +331,8 @@ class Player {
             ctx.fillRect(this.x + this.width + 3, this.y + this.height / 2 + 2, wingWidth - 6, 4);
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(this.x + this.width + wingWidth - 9, this.y + this.height / 2 + 4, 4, 8);
-            for (let i = 0; i < Math.min(wingsLevel, 5); i++) {
-                ctx.fillStyle = wingsLevel === 10 ? '#ffff00' : '#00ff00';
+            for (let i = 0; i < Math.min(wingsLevel, maxLights); i++) {
+                ctx.fillStyle = wingsLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
                 ctx.fillRect(this.x + this.width + wingWidth - 8, this.y + this.height / 2 + 14 + i * 1.5, 2, 1);
             }
         } else {
@@ -337,7 +345,7 @@ class Player {
         // Draw nose armor (behind main body, in front of wings)
         const noseLevel = gameState.shipUpgrades.noseLevel;
         if (noseLevel > 0) {
-            const levelScale = 1 + (noseLevel - 1) * 0.04;
+            const levelScale = 1 + (noseLevel - 1) * CONFIG.addons.visualScaling.nose;
             
             // Layered armor plating effect
             ctx.fillStyle = '#0099ff';
@@ -373,8 +381,8 @@ class Player {
             ctx.lineTo(centerX + 5 * levelScale, this.y - 1 * levelScale);
             ctx.stroke();
             
-            // Level indicator - shield emblem
-            if (noseLevel === 10) {
+            // Level indicator - shield emblem at max level
+            if (noseLevel === CONFIG.addons.maxLevel) {
                 ctx.fillStyle = '#ffff00';
                 ctx.fillRect(centerX - 2, this.y - 6 * levelScale, 4, 3);
             }
@@ -425,7 +433,7 @@ class Player {
         // Draw turret (on top of cockpit)
         const turretLevel = gameState.shipUpgrades.turretLevel;
         if (turretLevel > 0) {
-            const levelScale = 1 + (turretLevel - 1) * 0.04;
+            const levelScale = 1 + (turretLevel - 1) * CONFIG.addons.visualScaling.turret;
             const turretBaseWidth = 12 * levelScale;
             const turretBaseHeight = 7 * levelScale;
             
@@ -453,19 +461,20 @@ class Player {
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(centerX - 2, this.y + 9, 4, 2);
             
-            // Turret detail - targeting sensors
-            ctx.fillStyle = turretLevel === 10 ? '#ffff00' : '#ff0000';
+            // Turret detail - targeting sensors (yellow at max level)
+            ctx.fillStyle = turretLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#ff0000';
             ctx.fillRect(centerX - turretBaseWidth / 2 + 2, this.y + 21, 2, 2);
             ctx.fillRect(centerX + turretBaseWidth / 2 - 4, this.y + 21, 2, 2);
             
-            // Level indicator lights
-            for (let i = 0; i < Math.min(turretLevel, 3); i++) {
-                ctx.fillStyle = turretLevel === 10 ? '#ffff00' : '#00ff00';
+            // Level indicator lights (max 3 visible, yellow at max level)
+            const maxTurretLights = 3;
+            for (let i = 0; i < Math.min(turretLevel, maxTurretLights); i++) {
+                ctx.fillStyle = turretLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
                 ctx.fillRect(centerX - 1 + (i - 1) * 2, this.y + 24, 1, 1);
             }
         }
 
-        // Draw shield indicator
+        // Draw shield indicator (cyan color indicates shield energy field)
         if (this.shield < this.maxShield) {
             ctx.strokeStyle = `rgba(0, 255, 255, ${this.shield / this.maxShield})`;
             ctx.lineWidth = 2;
