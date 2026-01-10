@@ -403,7 +403,54 @@ class Player {
         ctx.lineWidth = 1;
         ctx.stroke();
         
-        // Engine exhaust ports
+        // Animated engine flame effect
+        const now = Date.now();
+        const flamePhase = (now / 100) % 1; // Fast animation cycle (100ms)
+        const flamePulse = Math.sin(now / 50) * 0.5 + 0.5; // Pulsing effect
+        const flameFlicker = Math.random() * 0.3 + 0.7; // Random flicker
+        
+        // Left engine flame
+        const leftEngineX = this.x + 11;
+        const rightEngineX = this.x + this.width - 11;
+        const engineY = this.y + this.height;
+        
+        // Flame height varies with pulse and flicker
+        const flameHeight = (8 + flamePulse * 6) * flameFlicker;
+        
+        // Draw engine flames for both engines
+        for (let engineX of [leftEngineX, rightEngineX]) {
+            // Outer flame (bright cyan/white core - spacey plasma effect)
+            ctx.fillStyle = `rgba(0, 255, 255, ${0.6 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 3, engineY + flameHeight * 0.6);
+            ctx.lineTo(engineX, engineY + flameHeight);
+            ctx.lineTo(engineX + 3, engineY + flameHeight * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Middle flame (green plasma - matches ship theme)
+            ctx.fillStyle = `rgba(0, 255, 100, ${0.8 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 2, engineY + flameHeight * 0.7);
+            ctx.lineTo(engineX, engineY + flameHeight * 0.85);
+            ctx.lineTo(engineX + 2, engineY + flameHeight * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner core (bright white/yellow hot core)
+            ctx.fillStyle = `rgba(255, 255, 200, ${0.9 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 1, engineY + flameHeight * 0.4);
+            ctx.lineTo(engineX, engineY + flameHeight * 0.5);
+            ctx.lineTo(engineX + 1, engineY + flameHeight * 0.4);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Engine exhaust ports (drawn on top of flames for depth)
         ctx.fillStyle = '#004400';
         ctx.fillRect(this.x + 8, this.y + this.height - 4, 6, 4);
         ctx.fillRect(this.x + this.width - 14, this.y + this.height - 4, 6, 4);
