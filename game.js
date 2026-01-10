@@ -35,7 +35,7 @@ const CONFIG = {
         railgun: {
             name: 'Railgun',
             fireRate: 100,
-            damage: 5,
+            damage: 3,
             speed: 15,
             color: '#ffff00',
             description: 'High rate, low damage',
@@ -105,7 +105,11 @@ const CONFIG = {
             baseFireRate: 1000, // Base fire rate in ms (level 1) - enemy-style intervals
             damage: 20, // Enemy-style damage per shot
             speed: 3, // Enemy-style speed
-            range: 0.5 // Half of playfield height
+            range: 0.5, // Half of playfield height
+            burstSize: 5, // Number of shots per burst
+            burstDelay: 100, // Delay between shots in a burst (ms)
+            burstCooldown: 1000, // Cooldown after burst (ms)
+            predictionAccuracyPerLevel: 0.1 // 10% improvement per level in prediction accuracy
         }
     },
     kamikazeDrone: {
@@ -172,6 +176,9 @@ const gameState = {
         turretLevel: 0 // 0 = not installed, 1-10 = level
     },
     lastTurretFire: 0, // Track turret fire timing
+    turretBurstCount: 0, // Track shots in current burst
+    turretBurstTarget: null, // Track current burst target
+    turretInBurst: false, // Track if currently in burst mode
     bossActive: false,
     waveComplete: false,
     weaponHeat: 0,
@@ -1175,6 +1182,9 @@ function resetGame() {
         turretLevel: 0
     };
     gameState.lastTurretFire = 0;
+    gameState.turretBurstCount = 0;
+    gameState.turretBurstTarget = null;
+    gameState.turretInBurst = false;
     gameState.bossActive = false;
     gameState.waveComplete = false;
     gameState.weaponHeat = 0;
@@ -1375,12 +1385,15 @@ function fireTurret() {
         }
     }
     
-    // Fire at nearest enemy if found (with predictive aiming)
+    // Fire at nearest enemy if found (with level-based predictive aiming)
     if (nearestEnemy) {
         const enemyCenterX = nearestEnemy.x + nearestEnemy.width / 2;
         const enemyCenterY = nearestEnemy.y + nearestEnemy.height / 2;
         
-        // Calculate predictive aim - account for enemy movement
+        // Calculate predictive aim with level-based accuracy
+        const turretLevel = gameState.shipUpgrades.turretLevel;
+        const predictionAccuracy = Math.min(1, 0.5 + turretLevel * CONFIG.addons.turret.predictionAccuracyPerLevel);
+        
         // Estimate time for bullet to reach target
         const dx = enemyCenterX - playerCenterX;
         const dy = enemyCenterY - playerCenterY;
@@ -1388,7 +1401,7 @@ function fireTurret() {
         const bulletSpeed = CONFIG.addons.turret.speed;
         const timeToImpact = distance / bulletSpeed;
         
-        // Predict enemy position based on their velocity
+        // Predict enemy position based on their velocity with level-based accuracy
         let predictedX = enemyCenterX;
         let predictedY = enemyCenterY;
         
@@ -1397,10 +1410,10 @@ function fireTurret() {
             if (gameState.boss === nearestEnemy) {
                 // Boss moves horizontally
                 const bossVx = nearestEnemy.moveDirection * nearestEnemy.speed;
-                predictedX += bossVx * timeToImpact;
+                predictedX += bossVx * timeToImpact * predictionAccuracy;
             } else {
                 // Regular enemy moves downward
-                predictedY += nearestEnemy.speed * timeToImpact;
+                predictedY += nearestEnemy.speed * timeToImpact * predictionAccuracy;
             }
         }
         
@@ -2018,13 +2031,76 @@ function update() {
     
     gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
 
-    // Turret auto-firing (enemy-style intervals)
+    // Turret auto-firing with burst mode
     const turretLevel = gameState.shipUpgrades.turretLevel;
     if (turretLevel > 0) {
-        const turretFireRate = Math.max(100, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
-        if (now - gameState.lastTurretFire >= turretFireRate) {
-            fireTurret();
-            gameState.lastTurretFire = now;
+        // Find current target to check if it changed
+        const maxRange = CONFIG.canvas.height * CONFIG.addons.turret.range;
+        let currentTarget = null;
+        let minDistance = maxRange;
+        
+        const player = gameState.player;
+        const playerCenterX = player.x + player.width / 2;
+        const playerCenterY = player.y + player.height / 2;
+        
+        // Find nearest enemy
+        gameState.enemies.forEach(enemy => {
+            const dx = (enemy.x + enemy.width / 2) - playerCenterX;
+            const dy = (enemy.y + enemy.height / 2) - playerCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                minDistance = distance;
+                currentTarget = enemy;
+            }
+        });
+        
+        if (gameState.boss) {
+            const dx = (gameState.boss.x + gameState.boss.width / 2) - playerCenterX;
+            const dy = (gameState.boss.y + gameState.boss.height / 2) - playerCenterY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < minDistance) {
+                currentTarget = gameState.boss;
+            }
+        }
+        
+        // Check if target changed (reset burst if it did)
+        if (currentTarget !== gameState.turretBurstTarget) {
+            gameState.turretBurstCount = 0;
+            gameState.turretBurstTarget = currentTarget;
+            gameState.turretInBurst = false;
+        }
+        
+        if (currentTarget) {
+            // Determine timing based on burst state
+            let fireDelay;
+            if (gameState.turretInBurst && gameState.turretBurstCount < CONFIG.addons.turret.burstSize) {
+                // In burst mode - rapid fire
+                fireDelay = CONFIG.addons.turret.burstDelay;
+            } else if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
+                // Burst complete - cooldown
+                fireDelay = CONFIG.addons.turret.burstCooldown;
+            } else {
+                // Starting new burst
+                fireDelay = Math.max(100, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
+            }
+            
+            if (now - gameState.lastTurretFire >= fireDelay) {
+                fireTurret();
+                gameState.lastTurretFire = now;
+                
+                if (gameState.turretInBurst) {
+                    gameState.turretBurstCount++;
+                    if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
+                        // Burst complete
+                        gameState.turretInBurst = false;
+                        gameState.turretBurstCount = 0;
+                    }
+                } else {
+                    // Start burst
+                    gameState.turretInBurst = true;
+                    gameState.turretBurstCount = 1;
+                }
+            }
         }
     }
 
