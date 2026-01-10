@@ -1375,16 +1375,40 @@ function fireTurret() {
         }
     }
     
-    // Fire at nearest enemy if found
+    // Fire at nearest enemy if found (with predictive aiming)
     if (nearestEnemy) {
-        const targetX = nearestEnemy.x + nearestEnemy.width / 2;
-        const targetY = nearestEnemy.y + nearestEnemy.height / 2;
+        const enemyCenterX = nearestEnemy.x + nearestEnemy.width / 2;
+        const enemyCenterY = nearestEnemy.y + nearestEnemy.height / 2;
+        
+        // Calculate predictive aim - account for enemy movement
+        // Estimate time for bullet to reach target
+        const dx = enemyCenterX - playerCenterX;
+        const dy = enemyCenterY - playerCenterY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const bulletSpeed = CONFIG.addons.turret.speed;
+        const timeToImpact = distance / bulletSpeed;
+        
+        // Predict enemy position based on their velocity
+        let predictedX = enemyCenterX;
+        let predictedY = enemyCenterY;
+        
+        if (nearestEnemy.speed !== undefined) {
+            // Regular enemy or boss moving downward
+            if (gameState.boss === nearestEnemy) {
+                // Boss moves horizontally
+                const bossVx = nearestEnemy.moveDirection * nearestEnemy.speed;
+                predictedX += bossVx * timeToImpact;
+            } else {
+                // Regular enemy moves downward
+                predictedY += nearestEnemy.speed * timeToImpact;
+            }
+        }
         
         const bullet = new TurretBullet(
             playerCenterX,
             playerCenterY,
-            targetX,
-            targetY
+            predictedX,
+            predictedY
         );
         gameState.turretBullets.push(bullet);
     }
