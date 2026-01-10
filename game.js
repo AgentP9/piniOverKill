@@ -101,10 +101,10 @@ const CONFIG = {
             cooldownBonusPerLevel: 0.05 // 5% cooldown improvement per level
         },
         turret: {
-            fireRatePerLevel: 50, // Fire rate reduction per level (faster)
-            baseFireRate: 500, // Base fire rate in ms (level 1) - railgun intervals
-            damage: 5, // Railgun-style damage: 5 per shot vs old 15, but fires 4x faster = higher DPS (10 vs 7.5 at L1)
-            speed: 15, // Railgun-style speed
+            fireRatePerLevel: 100, // Fire rate reduction per level (faster)
+            baseFireRate: 1000, // Base fire rate in ms (level 1) - enemy-style intervals
+            damage: 20, // Enemy-style damage per shot
+            speed: 3, // Enemy-style speed
             range: 0.5 // Half of playfield height
         }
     },
@@ -754,7 +754,7 @@ class TurretBullet {
         this.x = x;
         this.y = y;
         this.width = 4;
-        this.height = 12; // Elongated bullet (4x12) for railgun aesthetic - matches railgun weapon style
+        this.height = 8; // Enemy-style bullet dimensions
         
         // Calculate direction to target
         const dx = targetX - x;
@@ -764,7 +764,7 @@ class TurretBullet {
         this.vx = (dx / distance) * CONFIG.addons.turret.speed;
         this.vy = (dy / distance) * CONFIG.addons.turret.speed;
         this.damage = CONFIG.addons.turret.damage;
-        this.color = '#ffff00'; // Yellow color for railgun-style turret bullets
+        this.color = '#ff0000'; // Red color for enemy-style turret bullets
     }
 
     update() {
@@ -777,12 +777,11 @@ class TurretBullet {
     }
 
     draw() {
-        // Railgun-style bullet rendering
+        // Enemy-style bullet rendering (circular)
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        // Inner highlight for railgun look
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(this.x + 1, this.y + 2, this.width - 2, this.height - 4);
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        ctx.fill();
     }
 }
 
@@ -1995,10 +1994,10 @@ function update() {
     
     gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
 
-    // Turret auto-firing (railgun intervals)
+    // Turret auto-firing (enemy-style intervals)
     const turretLevel = gameState.shipUpgrades.turretLevel;
     if (turretLevel > 0) {
-        const turretFireRate = Math.max(50, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
+        const turretFireRate = Math.max(100, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
         if (now - gameState.lastTurretFire >= turretFireRate) {
             fireTurret();
             gameState.lastTurretFire = now;
