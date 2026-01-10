@@ -2074,33 +2074,40 @@ function update() {
             // Determine timing based on burst state
             let fireDelay;
             if (gameState.turretInBurst && gameState.turretBurstCount < CONFIG.addons.turret.burstSize) {
-                // In burst mode - rapid fire
+                // In burst mode - rapid fire between shots
                 fireDelay = CONFIG.addons.turret.burstDelay;
             } else if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
-                // Burst complete - cooldown
+                // Burst complete - in cooldown period
                 fireDelay = CONFIG.addons.turret.burstCooldown;
             } else {
-                // Starting new burst
-                fireDelay = Math.max(100, CONFIG.addons.turret.baseFireRate - (turretLevel - 1) * CONFIG.addons.turret.fireRatePerLevel);
+                // Not in burst - ready to start new burst
+                fireDelay = 0; // Fire immediately
             }
             
             if (now - gameState.lastTurretFire >= fireDelay) {
                 fireTurret();
                 gameState.lastTurretFire = now;
                 
-                if (gameState.turretInBurst) {
+                if (gameState.turretBurstCount < CONFIG.addons.turret.burstSize) {
+                    // Increment burst count
                     gameState.turretBurstCount++;
+                    gameState.turretInBurst = true;
+                    
                     if (gameState.turretBurstCount >= CONFIG.addons.turret.burstSize) {
-                        // Burst complete
+                        // Burst just completed - enter cooldown
                         gameState.turretInBurst = false;
-                        gameState.turretBurstCount = 0;
                     }
                 } else {
-                    // Start burst
-                    gameState.turretInBurst = true;
-                    gameState.turretBurstCount = 1;
+                    // Cooldown complete - reset for next burst
+                    gameState.turretBurstCount = 0;
+                    gameState.turretInBurst = false;
                 }
             }
+        } else {
+            // No target - reset burst state
+            gameState.turretBurstCount = 0;
+            gameState.turretInBurst = false;
+            gameState.turretBurstTarget = null;
         }
     }
 
