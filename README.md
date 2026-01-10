@@ -38,7 +38,6 @@ PiniOverKill is a retro-style space shooter featuring:
 ### Leveled Addons (Max Level: 10)
 - **Wing Cannons** (Green Wings): Adds side cannons to your ship. Each level increases structure capacity by 10 points
 - **Nose Armor** (Cyan Triangle): Reinforced front armor. Each level increases shield capacity by 10 points
-- **Cooling System** (Blue Fan): Advanced cooling system. Each level improves cooldown rate by 5%
 - **Turret** (Orange Gun): Auto-targeting turret that fires enemy-style bullets at nearby enemies. Each level increases fire rate (starts at 1000ms, -100ms per level, min 100ms)
 
 ### Other Addons

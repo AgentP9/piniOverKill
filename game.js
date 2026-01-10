@@ -20,8 +20,7 @@ const CONFIG = {
             damage: 50,
             speed: 12,
             color: '#ff0000',
-            description: 'Single mighty shot',
-            heatPerShot: 80
+            description: 'Single mighty shot'
         },
         plasma: {
             name: 'Plasma',
@@ -29,8 +28,7 @@ const CONFIG = {
             damage: 15,
             speed: 8,
             color: '#00ffff',
-            description: 'Moderate rate, medium damage',
-            heatPerShot: 30
+            description: 'Moderate rate, medium damage'
         },
         railgun: {
             name: 'Railgun',
@@ -38,8 +36,7 @@ const CONFIG = {
             damage: 3,
             speed: 15,
             color: '#ffff00',
-            description: 'High rate, low damage',
-            heatPerShot: 12
+            description: 'High rate, low damage'
         },
         blaster: {
             name: 'Blaster',
@@ -50,8 +47,7 @@ const CONFIG = {
             spread: 0.3,
             spreadMultiplier: 10,
             color: '#ff8800',
-            description: 'Shotgun-style spread',
-            heatPerShot: 45
+            description: 'Shotgun-style spread'
         }
     },
     enemy: {
@@ -97,9 +93,6 @@ const CONFIG = {
         nose: {
             shieldPerLevel: 10 // Shield increase per level
         },
-        cooling: {
-            cooldownBonusPerLevel: 0.05 // 5% cooldown improvement per level
-        },
         turret: {
             fireRatePerLevel: 100, // Fire rate reduction per level (faster)
             baseFireRate: 1000, // Base fire rate in ms (level 1) - enemy-style intervals
@@ -119,18 +112,6 @@ const CONFIG = {
         explosionTimeMin: 2000, // Min time before random explosion (ms)
         explosionTimeMax: 5000, // Max time before random explosion (ms)
         dronesPerPickup: 5 // Number of drones per pickup
-    },
-    overheat: {
-        maxHeat: 100,
-        cooldownRate: 0.8,
-        cooldownRatePassive: 1.5,
-        passiveCoolingDelay: 1000,
-        overheatThreshold: 75,
-        cautionThresholdMultiplier: 0.7,
-        fireRatePenalty: 1.8,
-        lockoutDuration: 3000, // 3 seconds cooldown animation when overheated
-        coolingSystemHeatMultiplier: 0.4,
-        coolingSystemCooldownBonus: 1.3
     },
     wave: {
         completionDelay: 3000
@@ -172,7 +153,6 @@ const gameState = {
     shipUpgrades: {
         wingsLevel: 0, // 0 = not installed, 1-10 = level
         noseLevel: 0, // 0 = not installed, 1-10 = level
-        coolingLevel: 0, // 0 = not installed, 1-10 = level
         turretLevel: 0 // 0 = not installed, 1-10 = level
     },
     lastTurretFire: 0, // Track turret fire timing
@@ -181,12 +161,7 @@ const gameState = {
     turretInBurst: false, // Track if currently in burst mode
     bossActive: false,
     waveComplete: false,
-    weaponHeat: 0,
-    isWeaponLocked: false,
-    weaponLockEndTime: 0,
-    lastHeatGenerationTime: 0,
     railgunContinuousFire: false,
-    cooldownAnimationTriggered: false, // Track if cooldown animation has been triggered
     godMode: true,
     fullEquipMode: false,
     repairBotActive: false,
@@ -353,19 +328,6 @@ class Player {
             ctx.fillStyle = '#00ffff';
             ctx.fillRect(this.x + this.width / 2 - 8 * levelScale, this.y - 5 * levelScale, 16 * levelScale, 8 * levelScale);
             ctx.fillRect(this.x + this.width / 2 - 5 * levelScale, this.y - 10 * levelScale, 10 * levelScale, 5 * levelScale);
-        }
-
-        // Draw cooling system (on roof/top of ship)
-        const coolingLevel = gameState.shipUpgrades.coolingLevel;
-        if (coolingLevel > 0) {
-            // Visual enhancement increases with level
-            const levelScale = 1 + (coolingLevel - 1) * 0.04;
-            ctx.strokeStyle = '#00aaff';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(this.x + this.width / 2 - 6 * levelScale, this.y + 5, 12 * levelScale, 8 * levelScale);
-            ctx.fillStyle = '#00aaff';
-            ctx.fillRect(this.x + this.width / 2 - 4 * levelScale, this.y + 7, 8 * levelScale, 1);
-            ctx.fillRect(this.x + this.width / 2 - 1, this.y + 6, 2, 6 * levelScale);
         }
 
         // Draw turret (on top of ship)
@@ -799,7 +761,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze', 'turret'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -927,18 +889,6 @@ class Powerup {
                 ctx.fill();
                 ctx.fillStyle = '#0088ff';
                 ctx.fillRect(-4, 0, 8, 6);
-                break;
-            case 'cooling':
-                // Cooling system icon (fan/radiator on roof)
-                ctx.strokeStyle = '#00aaff';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.rect(-8, -8, 16, 16);
-                ctx.stroke();
-                ctx.fillStyle = '#00aaff';
-                // Draw fan blades
-                ctx.fillRect(-6, -1, 12, 2);
-                ctx.fillRect(-1, -6, 2, 12);
                 break;
             case 'kamikaze':
                 // Kamikaze drone icon (explosive drone)
@@ -1178,7 +1128,6 @@ function resetGame() {
     gameState.shipUpgrades = {
         wingsLevel: 0,
         noseLevel: 0,
-        coolingLevel: 0,
         turretLevel: 0
     };
     gameState.lastTurretFire = 0;
@@ -1187,12 +1136,7 @@ function resetGame() {
     gameState.turretInBurst = false;
     gameState.bossActive = false;
     gameState.waveComplete = false;
-    gameState.weaponHeat = 0;
-    gameState.isWeaponLocked = false;
-    gameState.weaponLockEndTime = 0;
-    gameState.lastHeatGenerationTime = 0;
     gameState.railgunContinuousFire = false;
-    gameState.cooldownAnimationTriggered = false;
     gameState.repairBotActive = false;
     gameState.repairBotEndTime = 0;
     gameState.lastDamageTime = 0;
@@ -1207,7 +1151,6 @@ function resetGame() {
         gameState.shipUpgrades = {
             wingsLevel: CONFIG.addons.maxLevel,
             noseLevel: CONFIG.addons.maxLevel,
-            coolingLevel: CONFIG.addons.maxLevel,
             turretLevel: CONFIG.addons.maxLevel
         };
         // Boost player stats to max for all addons
@@ -1262,22 +1205,7 @@ function fireBullet() {
     const now = Date.now();
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
     
-    // Check if weapon is locked due to overheating
-    if (gameState.isWeaponLocked) {
-        if (now >= gameState.weaponLockEndTime) {
-            gameState.isWeaponLocked = false;
-        } else {
-            return; // Weapon still locked
-        }
-    }
-    
-    // Apply fire rate penalty if overheating
-    let fireRateMultiplier = gameState.weaponUpgrades.rateOfFire;
-    if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
-        fireRateMultiplier = fireRateMultiplier / CONFIG.overheat.fireRatePenalty;
-    }
-    
-    const adjustedFireRate = weaponConfig.fireRate / fireRateMultiplier;
+    const adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
     
     if (now - gameState.lastFire < adjustedFireRate) return;
 
@@ -1305,40 +1233,10 @@ function fireBullet() {
         }
     }
     
-    // Increase heat after firing
-    const coolingLevel = gameState.shipUpgrades.coolingLevel;
-    // Base cooling multiplier, then apply level bonus additively
-    const coolingMultiplier = coolingLevel > 0 ? 
-        CONFIG.overheat.coolingSystemHeatMultiplier * Math.max(0.3, 1 - coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel) : 1;
-    const heatIncrease = weaponConfig.heatPerShot * coolingMultiplier;
-    gameState.weaponHeat = Math.min(CONFIG.overheat.maxHeat, gameState.weaponHeat + heatIncrease);
-    gameState.lastHeatGenerationTime = now;
-    
-    // Lock weapon if max heat reached
-    if (gameState.weaponHeat >= CONFIG.overheat.maxHeat) {
-        gameState.isWeaponLocked = true;
-        gameState.weaponLockEndTime = now + CONFIG.overheat.lockoutDuration;
-        // Note: railgunContinuousFire stays true during lockout. The weapon lock
-        // prevents firing (line 845-850), and once unlocked, continuous fire resumes
-        // automatically via the update loop (line 1220-1222)
-    }
-    
     updateHUD();
 }
 
 function switchWeapon() {
-    const now = Date.now();
-    
-    // Check if weapon lock has expired
-    if (gameState.isWeaponLocked) {
-        if (now >= gameState.weaponLockEndTime) {
-            gameState.isWeaponLocked = false;
-        } else {
-            // Weapon still locked, prevent switching
-            return;
-        }
-    }
-    
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     const currentIndex = weapons.indexOf(gameState.currentWeapon);
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
@@ -1476,7 +1374,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'cooling', 'kamikaze', 'turret'];
+    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -1795,15 +1693,6 @@ function checkCollisions() {
                         showPickupNotification('NOSE MAX LEVEL');
                     }
                     break;
-                case 'cooling':
-                    if (gameState.shipUpgrades.coolingLevel < CONFIG.addons.maxLevel) {
-                        gameState.shipUpgrades.coolingLevel++;
-                        const level = gameState.shipUpgrades.coolingLevel;
-                        showPickupNotification(`COOLING LEVEL ${level} - FASTER COOLDOWN`);
-                    } else {
-                        showPickupNotification('COOLING MAX LEVEL');
-                    }
-                    break;
                 case 'turret':
                     if (gameState.shipUpgrades.turretLevel < CONFIG.addons.maxLevel) {
                         gameState.shipUpgrades.turretLevel++;
@@ -1912,9 +1801,6 @@ function updateHUD() {
         document.getElementById('structure-fill').style.width = structurePercent + '%';
     }
     
-    // Update heat bar visuals
-    updateHeatBarVisuals();
-    
     // Update addon status display
     updateAddonStatus();
 }
@@ -1923,7 +1809,6 @@ function updateAddonStatus() {
     const addons = [
         { id: 'addon-wings', levelProperty: 'wingsLevel' },
         { id: 'addon-nose', levelProperty: 'noseLevel' },
-        { id: 'addon-cooling', levelProperty: 'coolingLevel' },
         { id: 'addon-turret', levelProperty: 'turretLevel' }
     ];
     
@@ -2011,25 +1896,6 @@ function update() {
     if (hudNeedsUpdate) {
         updateHUD();
     }
-
-    // Weapon heat cooling with passive bonus
-    const timeSinceLastHeat = now - gameState.lastHeatGenerationTime;
-    const isPassiveCooling = timeSinceLastHeat > CONFIG.overheat.passiveCoolingDelay;
-    
-    let cooldownRate = CONFIG.overheat.cooldownRate;
-    if (isPassiveCooling) {
-        cooldownRate = CONFIG.overheat.cooldownRatePassive;
-    }
-    
-    // Apply cooling system bonus (additive, not multiplicative)
-    const coolingLevel = gameState.shipUpgrades.coolingLevel;
-    if (coolingLevel > 0) {
-        // Base bonus + level bonus, capped at 3x improvement
-        const coolingBonus = Math.min(3.0, CONFIG.overheat.coolingSystemCooldownBonus + coolingLevel * CONFIG.addons.cooling.cooldownBonusPerLevel);
-        cooldownRate *= coolingBonus;
-    }
-    
-    gameState.weaponHeat = Math.max(0, gameState.weaponHeat - cooldownRate);
 
     // Turret auto-firing with burst mode
     const turretLevel = gameState.shipUpgrades.turretLevel;
@@ -2267,48 +2133,6 @@ function stopMenuAnimation() {
     if (menuStarfield.animationId) {
         cancelAnimationFrame(menuStarfield.animationId);
         menuStarfield.animationId = null;
-    }
-}
-
-// Heat Bar Update System
-function updateHeatBarVisuals() {
-    const heatPercent = (gameState.weaponHeat / CONFIG.overheat.maxHeat) * 100;
-    const heatFill = document.getElementById('heat-fill');
-    const cooldownFill = document.getElementById('cooldown-fill');
-    
-    if (heatFill) {
-        heatFill.style.width = heatPercent + '%';
-        
-        // Change color based on heat level
-        if (gameState.isWeaponLocked) {
-            heatFill.style.backgroundColor = '#ff0000';
-        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold) {
-            heatFill.style.backgroundColor = '#ff6600';
-        } else if (gameState.weaponHeat >= CONFIG.overheat.overheatThreshold * CONFIG.overheat.cautionThresholdMultiplier) {
-            heatFill.style.backgroundColor = '#ff9900';
-        } else {
-            heatFill.style.backgroundColor = '#ffff00';
-        }
-    }
-    
-    // Update cooldown overlay bar - show animation when locked
-    if (cooldownFill) {
-        if (gameState.isWeaponLocked && !gameState.cooldownAnimationTriggered) {
-            // Trigger cooldown animation only once when weapon first locks
-            gameState.cooldownAnimationTriggered = true;
-            cooldownFill.style.animation = 'none';
-            // Force reflow to restart animation
-            void cooldownFill.offsetWidth;
-            const animationDuration = CONFIG.overheat.lockoutDuration / 1000; // Convert ms to seconds
-            cooldownFill.style.animation = `cooldown-sweep ${animationDuration}s linear forwards`;
-        } else if (!gameState.isWeaponLocked) {
-            // Reset animation trigger when weapon unlocks
-            gameState.cooldownAnimationTriggered = false;
-            // Show static cooldown state based on heat
-            cooldownFill.style.animation = 'none';
-            const cooldownPercent = 100 - heatPercent;
-            cooldownFill.style.width = cooldownPercent + '%';
-        }
     }
 }
 
