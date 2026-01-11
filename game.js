@@ -87,6 +87,13 @@ const CONFIG = {
     },
     addons: {
         maxLevel: 10,
+        // Visual scaling factors per level
+        visualScaling: {
+            wings: 0.05,  // 5% size increase per level
+            nose: 0.04,   // 4% size increase per level
+            turret: 0.04, // 4% size increase per level
+            maxLevelIndicatorLights: 5  // Maximum number of level indicator lights to show
+        },
         wings: {
             structurePerLevel: 10 // Structure increase per level
         },
@@ -285,69 +292,241 @@ class Player {
     }
 
     draw() {
-        // Draw ship body
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y);
-        ctx.lineTo(this.x, this.y + this.height);
-        ctx.lineTo(this.x + this.width / 2, this.y + this.height * 0.8);
-        ctx.lineTo(this.x + this.width, this.y + this.height);
-        ctx.closePath();
-        ctx.fill();
-
-        // Draw cockpit
-        ctx.fillStyle = '#00ffff';
-        ctx.fillRect(this.x + this.width / 2 - 5, this.y + 10, 10, 10);
-
-        // Draw wings (upgraded if player has wings power-up)
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        
+        // Draw wings first (so they appear behind the ship body)
         const wingsLevel = gameState.shipUpgrades.wingsLevel;
         if (wingsLevel > 0) {
-            // Visual size increases with level (subtle effect)
-            const levelScale = 1 + (wingsLevel - 1) * 0.05;
-            ctx.fillStyle = '#00ff00';
-            // Left wing addon
-            ctx.fillRect(this.x - 15 * levelScale, this.y + this.height / 2, 15 * levelScale, 20 * levelScale);
+            // Enhanced wing cannons with level-based visual improvements
+            const levelScale = 1 + (wingsLevel - 1) * CONFIG.addons.visualScaling.wings;
+            const wingWidth = 15 * levelScale;
+            const wingHeight = 22 * levelScale;
+            
+            // Left wing cannon
+            ctx.fillStyle = '#00dd00';
+            ctx.fillRect(this.x - wingWidth, this.y + this.height / 2 - 2, wingWidth, wingHeight);
+            // Wing cannon detail - darker edge
+            ctx.fillStyle = '#008800';
+            ctx.fillRect(this.x - wingWidth, this.y + this.height / 2 - 2, 3, wingHeight);
+            // Cannon barrel
+            ctx.fillStyle = '#006600';
+            ctx.fillRect(this.x - wingWidth + 3, this.y + this.height / 2 + 2, wingWidth - 6, 4);
+            // Muzzle flash indicator (red)
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x - 13 * levelScale, this.y + this.height / 2 + 5, 3, 10);
-            // Right wing addon
-            ctx.fillStyle = '#00ff00';
-            ctx.fillRect(this.x + this.width, this.y + this.height / 2, 15 * levelScale, 20 * levelScale);
+            ctx.fillRect(this.x - wingWidth + 5, this.y + this.height / 2 + 4, 4, 8);
+            // Level indicator lights
+            const maxLights = CONFIG.addons.visualScaling.maxLevelIndicatorLights;
+            for (let i = 0; i < Math.min(wingsLevel, maxLights); i++) {
+                ctx.fillStyle = wingsLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
+                ctx.fillRect(this.x - wingWidth + 6, this.y + this.height / 2 + 14 + i * 1.5, 2, 1);
+            }
+            
+            // Right wing cannon (mirrored)
+            ctx.fillStyle = '#00dd00';
+            ctx.fillRect(this.x + this.width, this.y + this.height / 2 - 2, wingWidth, wingHeight);
+            ctx.fillStyle = '#008800';
+            ctx.fillRect(this.x + this.width + wingWidth - 3, this.y + this.height / 2 - 2, 3, wingHeight);
+            ctx.fillStyle = '#006600';
+            ctx.fillRect(this.x + this.width + 3, this.y + this.height / 2 + 2, wingWidth - 6, 4);
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x + this.width + 10 * levelScale, this.y + this.height / 2 + 5, 3, 10);
+            ctx.fillRect(this.x + this.width + wingWidth - 9, this.y + this.height / 2 + 4, 4, 8);
+            for (let i = 0; i < Math.min(wingsLevel, maxLights); i++) {
+                ctx.fillStyle = wingsLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
+                ctx.fillRect(this.x + this.width + wingWidth - 8, this.y + this.height / 2 + 14 + i * 1.5, 2, 1);
+            }
         } else {
+            // Standard wings (smaller, less detailed)
             ctx.fillStyle = '#00aa00';
             ctx.fillRect(this.x - 5, this.y + this.height / 2, 10, 15);
             ctx.fillRect(this.x + this.width - 5, this.y + this.height / 2, 10, 15);
         }
-
-        // Draw nose upgrade (reinforced front)
+        
+        // Draw nose armor (behind main body, in front of wings)
         const noseLevel = gameState.shipUpgrades.noseLevel;
         if (noseLevel > 0) {
-            // Visual enhancement increases with level
-            const levelScale = 1 + (noseLevel - 1) * 0.03;
-            ctx.fillStyle = '#00ffff';
-            ctx.fillRect(this.x + this.width / 2 - 8 * levelScale, this.y - 5 * levelScale, 16 * levelScale, 8 * levelScale);
-            ctx.fillRect(this.x + this.width / 2 - 5 * levelScale, this.y - 10 * levelScale, 10 * levelScale, 5 * levelScale);
+            const levelScale = 1 + (noseLevel - 1) * CONFIG.addons.visualScaling.nose;
+            
+            // Layered armor plating effect
+            ctx.fillStyle = '#0099ff';
+            ctx.beginPath();
+            ctx.moveTo(centerX, this.y - 12 * levelScale);
+            ctx.lineTo(centerX - 10 * levelScale, this.y - 4 * levelScale);
+            ctx.lineTo(centerX - 8 * levelScale, this.y);
+            ctx.lineTo(centerX + 8 * levelScale, this.y);
+            ctx.lineTo(centerX + 10 * levelScale, this.y - 4 * levelScale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner armor layer
+            ctx.fillStyle = '#00ccff';
+            ctx.beginPath();
+            ctx.moveTo(centerX, this.y - 8 * levelScale);
+            ctx.lineTo(centerX - 6 * levelScale, this.y - 2 * levelScale);
+            ctx.lineTo(centerX - 5 * levelScale, this.y);
+            ctx.lineTo(centerX + 5 * levelScale, this.y);
+            ctx.lineTo(centerX + 6 * levelScale, this.y - 2 * levelScale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Armor highlights
+            ctx.strokeStyle = '#00ffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(centerX - 7 * levelScale, this.y - 3 * levelScale);
+            ctx.lineTo(centerX - 5 * levelScale, this.y - 1 * levelScale);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(centerX + 7 * levelScale, this.y - 3 * levelScale);
+            ctx.lineTo(centerX + 5 * levelScale, this.y - 1 * levelScale);
+            ctx.stroke();
+            
+            // Level indicator - shield emblem at max level
+            if (noseLevel === CONFIG.addons.maxLevel) {
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(centerX - 2, this.y - 6 * levelScale, 4, 3);
+            }
         }
 
-        // Draw turret (on top of ship)
+        // Draw ship body with enhanced detail
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(centerX, this.y);
+        ctx.lineTo(this.x + 2, this.y + this.height);
+        ctx.lineTo(centerX, this.y + this.height * 0.75);
+        ctx.lineTo(this.x + this.width - 2, this.y + this.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add body outline for definition
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Animated engine flame effect
+        const now = Date.now();
+        const flamePhase = (now / 100) % 1; // Fast animation cycle (100ms)
+        const flamePulse = Math.sin(now / 50) * 0.5 + 0.5; // Pulsing effect
+        const flameFlicker = Math.random() * 0.3 + 0.7; // Random flicker
+        
+        // Left engine flame
+        const leftEngineX = this.x + 11;
+        const rightEngineX = this.x + this.width - 11;
+        const engineY = this.y + this.height;
+        
+        // Flame height varies with pulse and flicker
+        const flameHeight = (8 + flamePulse * 6) * flameFlicker;
+        
+        // Draw engine flames for both engines
+        for (let engineX of [leftEngineX, rightEngineX]) {
+            // Outer flame (bright cyan/white core - spacey plasma effect)
+            ctx.fillStyle = `rgba(0, 255, 255, ${0.6 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 3, engineY + flameHeight * 0.6);
+            ctx.lineTo(engineX, engineY + flameHeight);
+            ctx.lineTo(engineX + 3, engineY + flameHeight * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Middle flame (green plasma - matches ship theme)
+            ctx.fillStyle = `rgba(0, 255, 100, ${0.8 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 2, engineY + flameHeight * 0.7);
+            ctx.lineTo(engineX, engineY + flameHeight * 0.85);
+            ctx.lineTo(engineX + 2, engineY + flameHeight * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner core (bright white/yellow hot core)
+            ctx.fillStyle = `rgba(255, 255, 200, ${0.9 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, engineY);
+            ctx.lineTo(engineX - 1, engineY + flameHeight * 0.4);
+            ctx.lineTo(engineX, engineY + flameHeight * 0.5);
+            ctx.lineTo(engineX + 1, engineY + flameHeight * 0.4);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Engine exhaust ports (drawn on top of flames for depth)
+        ctx.fillStyle = '#004400';
+        ctx.fillRect(this.x + 8, this.y + this.height - 4, 6, 4);
+        ctx.fillRect(this.x + this.width - 14, this.y + this.height - 4, 6, 4);
+        ctx.fillStyle = '#00aa00';
+        ctx.fillRect(this.x + 9, this.y + this.height - 3, 4, 3);
+        ctx.fillRect(this.x + this.width - 13, this.y + this.height - 3, 4, 3);
+        
+        // Body panel details
+        ctx.fillStyle = '#008800';
+        ctx.fillRect(centerX - 3, this.y + 18, 6, 3);
+        ctx.fillRect(centerX - 4, this.y + 24, 8, 2);
+
+        // Enhanced cockpit with canopy effect
+        ctx.fillStyle = '#003333';
+        ctx.fillRect(centerX - 6, this.y + 8, 12, 12);
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(centerX - 5, this.y + 9, 10, 10);
+        // Canopy highlight
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(centerX - 3, this.y + 10, 2, 3);
+        ctx.fillRect(centerX + 1, this.y + 11, 2, 2);
+        // Cockpit frame
+        ctx.strokeStyle = '#00cccc';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(centerX - 5, this.y + 9, 10, 10);
+
+        // Draw turret (on top of cockpit)
         const turretLevel = gameState.shipUpgrades.turretLevel;
         if (turretLevel > 0) {
-            const levelScale = 1 + (turretLevel - 1) * 0.03;
+            const levelScale = 1 + (turretLevel - 1) * CONFIG.addons.visualScaling.turret;
+            const turretBaseWidth = 12 * levelScale;
+            const turretBaseHeight = 7 * levelScale;
+            
+            // Turret mounting base
+            ctx.fillStyle = '#aa4400';
+            ctx.fillRect(centerX - turretBaseWidth / 2, this.y + 22, turretBaseWidth, 4);
+            
+            // Turret base body
             ctx.fillStyle = '#ff8800';
-            // Turret base
-            ctx.fillRect(this.x + this.width / 2 - 5 * levelScale, this.y + 15, 10 * levelScale, 6 * levelScale);
-            // Turret barrel
+            ctx.fillRect(centerX - turretBaseWidth / 2 + 1, this.y + 18, turretBaseWidth - 2, turretBaseHeight);
+            
+            // Turret highlights
             ctx.fillStyle = '#ffaa00';
-            ctx.fillRect(this.x + this.width / 2 - 2, this.y + 10, 4, 8 * levelScale);
+            ctx.fillRect(centerX - turretBaseWidth / 2 + 2, this.y + 19, turretBaseWidth - 4, 2);
+            
+            // Turret barrel
+            ctx.fillStyle = '#cc6600';
+            ctx.fillRect(centerX - 3, this.y + 10, 6, 10 * levelScale);
+            ctx.fillStyle = '#ff9900';
+            ctx.fillRect(centerX - 2, this.y + 11, 4, 9 * levelScale);
+            
+            // Barrel tip/muzzle
+            ctx.fillStyle = '#330000';
+            ctx.fillRect(centerX - 3, this.y + 8, 6, 3);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(centerX - 2, this.y + 9, 4, 2);
+            
+            // Turret detail - targeting sensors (yellow at max level)
+            ctx.fillStyle = turretLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#ff0000';
+            ctx.fillRect(centerX - turretBaseWidth / 2 + 2, this.y + 21, 2, 2);
+            ctx.fillRect(centerX + turretBaseWidth / 2 - 4, this.y + 21, 2, 2);
+            
+            // Level indicator lights (max 3 visible, yellow at max level)
+            const maxTurretLights = 3;
+            for (let i = 0; i < Math.min(turretLevel, maxTurretLights); i++) {
+                ctx.fillStyle = turretLevel === CONFIG.addons.maxLevel ? '#ffff00' : '#00ff00';
+                ctx.fillRect(centerX - 1 + (i - 1) * 2, this.y + 24, 1, 1);
+            }
         }
 
-        // Draw shield indicator
+        // Draw shield indicator (cyan color indicates shield energy field)
         if (this.shield < this.maxShield) {
-            ctx.strokeStyle = `rgba(0, 255, 0, ${this.shield / this.maxShield})`;
+            ctx.strokeStyle = `rgba(0, 255, 255, ${this.shield / this.maxShield})`;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 + 5, 0, Math.PI * 2);
+            ctx.arc(centerX, centerY, this.width / 2 + 5, 0, Math.PI * 2);
             ctx.stroke();
         }
     }
