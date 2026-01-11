@@ -52,14 +52,157 @@ const CONFIG = {
     },
     enemy: {
         spawnRate: 2000,
-        speed: 2
+        speed: 2,
+        // Wave-based difficulty scaling
+        healthScaling: 0.1, // 10% increase per wave
+        damageScaling: 0.08, // 8% increase per wave
+        // Enemy type definitions
+        types: {
+            small: {
+                health: 15,
+                speed: 3.5,
+                width: 25,
+                height: 25,
+                weapon: 'plasma',
+                fireRate: 1800,
+                damage: 15,
+                color: '#ff6666',
+                points: 8
+            },
+            standard: {
+                health: 30,
+                speed: 2,
+                width: 30,
+                height: 30,
+                weapon: 'plasma',
+                fireRate: 1500,
+                damage: 20,
+                color: '#ff0000',
+                points: 15
+            },
+            advanced: {
+                health: 35,
+                speed: 2,
+                width: 32,
+                height: 32,
+                weapon: 'blaster',
+                fireRate: 2000,
+                damage: 12,
+                pellets: 3,
+                spread: 0.2,
+                color: '#ff00ff',
+                points: 20
+            },
+            heavy: {
+                health: 60,
+                speed: 1.2,
+                width: 40,
+                height: 40,
+                weapon: 'plasma',
+                fireRate: 1200,
+                damage: 25,
+                color: '#aa0000',
+                points: 30
+            },
+            cruiser: {
+                health: 100,
+                speed: 0.8,
+                width: 50,
+                height: 50,
+                weapon: 'laser',
+                fireRate: 1500,
+                damage: 35,
+                color: '#8800ff',
+                points: 50,
+                hasTurrets: true,
+                turretWeapon: 'plasma',
+                turretFireRate: 1000,
+                turretDamage: 18
+            },
+            battleship: {
+                health: 150,
+                speed: 0.5,
+                width: 60,
+                height: 60,
+                weapon: 'laser',
+                fireRate: 1800,
+                damage: 40,
+                color: '#6600cc',
+                points: 75,
+                hasTurrets: true,
+                turretWeapon: 'plasma',
+                turretFireRate: 900,
+                turretDamage: 20,
+                deployDrones: true,
+                droneDeployRate: 8000
+            }
+        }
     },
     boss: {
-        health: 500,
-        speed: 1,
-        fireRate: 800,
-        points: 500,
-        spawnThreshold: 15
+        spawnThreshold: 15,
+        // Star Destroyer variants
+        types: {
+            blaster: {
+                health: 800,
+                speed: 0.8,
+                width: 100,
+                height: 100,
+                weapon: 'blaster',
+                fireRate: 1200,
+                damage: 15,
+                pellets: 5,
+                spread: 0.3,
+                color: '#ff0099',
+                points: 500,
+                name: 'STAR DESTROYER'
+            },
+            blasterDrone: {
+                health: 900,
+                speed: 0.8,
+                width: 100,
+                height: 100,
+                weapon: 'blaster',
+                fireRate: 1200,
+                damage: 15,
+                pellets: 5,
+                spread: 0.3,
+                color: '#ff0066',
+                points: 600,
+                name: 'STAR DESTROYER',
+                deployDrones: true,
+                droneDeployRate: 6000
+            },
+            plasmaDrone: {
+                health: 1000,
+                speed: 0.7,
+                width: 100,
+                height: 100,
+                weapon: 'plasma',
+                fireRate: 800,
+                damage: 30,
+                color: '#9900ff',
+                points: 700,
+                name: 'STAR DESTROYER',
+                deployDrones: true,
+                droneDeployRate: 5000
+            },
+            railgunTurret: {
+                health: 1100,
+                speed: 0.6,
+                width: 110,
+                height: 110,
+                weapon: 'railgun',
+                fireRate: 400,
+                damage: 8,
+                color: '#6600ff',
+                points: 800,
+                name: 'STAR DESTROYER',
+                hasTurrets: true,
+                turretWeapon: 'plasma',
+                turretFireRate: 1000,
+                turretDamage: 25
+            }
+        }
     },
     asteroid: {
         spawnRate: 3000,
@@ -120,6 +263,16 @@ const CONFIG = {
         explosionTimeMax: 5000, // Max time before random explosion (ms)
         dronesPerPickup: 5 // Number of drones per pickup
     },
+    enemyDrone: {
+        health: 10,
+        speed: 2.5,
+        width: 15,
+        height: 15,
+        damage: 15,
+        color: '#ffaa00',
+        points: 5,
+        explosionTime: 1000 // Drones explode after 1 second
+    },
     wave: {
         completionDelay: 3000
     },
@@ -178,7 +331,8 @@ const gameState = {
     kamikazeDrones: [], // Array of active kamikaze drones
     kamikazeDroneActive: false,
     kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
-    lastDroneSpawn: 0
+    lastDroneSpawn: 0,
+    enemyDrones: [] // Array of enemy-deployed drones
 };
 
 // Canvas Setup
@@ -584,42 +738,133 @@ class Player {
 
 // Enemy Class
 class Enemy {
-    constructor(type = 'basic') {
+    constructor(type = 'standard', wave = 1) {
         this.type = type;
-        this.width = 30;
-        this.height = 30;
+        const config = CONFIG.enemy.types[type];
+        
+        // Apply wave-based scaling
+        const healthMultiplier = 1 + (wave - 1) * CONFIG.enemy.healthScaling;
+        const damageMultiplier = 1 + (wave - 1) * CONFIG.enemy.damageScaling;
+        
+        this.width = config.width;
+        this.height = config.height;
         this.x = Math.random() * (CONFIG.canvas.width - this.width);
         this.y = -this.height;
-        this.speed = CONFIG.enemy.speed + Math.random() * 2;
-        this.health = type === 'basic' ? 20 : 40;
+        this.speed = config.speed + Math.random() * 0.5;
+        this.health = Math.floor(config.health * healthMultiplier);
         this.maxHealth = this.health;
-        this.color = type === 'basic' ? '#ff0000' : '#ff00ff';
+        this.color = config.color;
+        this.weapon = config.weapon;
         this.lastFire = 0;
-        this.fireRate = 1500 + Math.random() * 1000;
-        this.points = type === 'basic' ? 10 : 25;
+        this.fireRate = config.fireRate + Math.random() * 500;
+        this.damage = Math.floor(config.damage * damageMultiplier);
+        this.points = config.points;
+        this.pellets = config.pellets || 1;
+        this.spread = config.spread || 0;
+        
+        // Turret support for cruiser and battleship
+        this.hasTurrets = config.hasTurrets || false;
+        if (this.hasTurrets) {
+            this.turretWeapon = config.turretWeapon;
+            this.turretFireRate = config.turretFireRate;
+            this.turretDamage = Math.floor(config.turretDamage * damageMultiplier);
+            this.lastTurretFire = 0;
+        }
+        
+        // Drone deployment for battleship
+        this.deployDrones = config.deployDrones || false;
+        if (this.deployDrones) {
+            this.droneDeployRate = config.droneDeployRate;
+            this.lastDroneDeploy = 0;
+        }
     }
 
     update() {
         this.y += this.speed;
         
-        // Enemy shooting
         const now = Date.now();
+        
+        // Main weapon shooting
         if (now - this.lastFire > this.fireRate && this.y > 50 && this.y < CONFIG.canvas.height - 100) {
             this.shoot();
             this.lastFire = now;
+        }
+        
+        // Turret shooting (for cruiser and battleship)
+        if (this.hasTurrets && now - this.lastTurretFire > this.turretFireRate && this.y > 50 && this.y < CONFIG.canvas.height - 100) {
+            this.shootTurrets();
+            this.lastTurretFire = now;
+        }
+        
+        // Drone deployment (for battleship)
+        if (this.deployDrones && now - this.lastDroneDeploy > this.droneDeployRate && this.y > 50 && this.y < CONFIG.canvas.height - 200) {
+            this.deployDrone();
+            this.lastDroneDeploy = now;
         }
 
         return this.y < CONFIG.canvas.height + this.height;
     }
 
     shoot() {
-        const bullet = new EnemyBullet(
-            this.x + this.width / 2 - 2,
-            this.y + this.height,
+        if (this.weapon === 'blaster') {
+            // Shoot spread pattern
+            for (let i = 0; i < this.pellets; i++) {
+                const spreadAngle = (Math.random() - 0.5) * this.spread;
+                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * 100;
+                const targetY = gameState.player.y + gameState.player.height / 2;
+                const bullet = new EnemyBullet(
+                    this.x + this.width / 2,
+                    this.y + this.height,
+                    targetX,
+                    targetY,
+                    this.damage
+                );
+                gameState.enemyBullets.push(bullet);
+            }
+        } else {
+            // Shoot straight at player
+            const bullet = new EnemyBullet(
+                this.x + this.width / 2,
+                this.y + this.height,
+                gameState.player.x + gameState.player.width / 2,
+                gameState.player.y + gameState.player.height / 2,
+                this.damage,
+                this.weapon
+            );
+            gameState.enemyBullets.push(bullet);
+        }
+    }
+    
+    shootTurrets() {
+        // Left turret
+        const leftBullet = new EnemyBullet(
+            this.x + this.width * 0.25,
+            this.y + this.height / 2,
             gameState.player.x + gameState.player.width / 2,
-            gameState.player.y + gameState.player.height / 2
+            gameState.player.y + gameState.player.height / 2,
+            this.turretDamage,
+            this.turretWeapon
         );
-        gameState.enemyBullets.push(bullet);
+        gameState.enemyBullets.push(leftBullet);
+        
+        // Right turret
+        const rightBullet = new EnemyBullet(
+            this.x + this.width * 0.75,
+            this.y + this.height / 2,
+            gameState.player.x + gameState.player.width / 2,
+            gameState.player.y + gameState.player.height / 2,
+            this.turretDamage,
+            this.turretWeapon
+        );
+        gameState.enemyBullets.push(rightBullet);
+    }
+    
+    deployDrone() {
+        const drone = new EnemyDrone(
+            this.x + this.width / 2,
+            this.y + this.height
+        );
+        gameState.enemyDrones.push(drone);
     }
 
     draw() {
@@ -632,6 +877,19 @@ class Enemy {
         ctx.lineTo(this.x + this.width, this.y);
         ctx.closePath();
         ctx.fill();
+        
+        // Draw turrets for cruiser and battleship
+        if (this.hasTurrets) {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(this.x + this.width * 0.25 - 3, this.y + this.height / 2 - 3, 6, 6);
+            ctx.fillRect(this.x + this.width * 0.75 - 3, this.y + this.height / 2 - 3, 6, 6);
+        }
+        
+        // Draw larger ship details for bigger enemies
+        if (this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(this.x + this.width / 2 - 2, this.y + this.height * 0.3, 4, 4);
+        }
 
         // Draw health bar
         if (this.health < this.maxHealth) {
@@ -697,20 +955,48 @@ class Bullet {
 
 // Boss Class
 class Boss {
-    constructor() {
-        this.width = 80;
-        this.height = 80;
+    constructor(type = 'blaster', wave = 1) {
+        this.type = type;
+        const config = CONFIG.boss.types[type];
+        
+        // Apply wave-based scaling (less aggressive than regular enemies)
+        const healthMultiplier = 1 + (wave - 1) * 0.05; // 5% per wave
+        const damageMultiplier = 1 + (wave - 1) * 0.04; // 4% per wave
+        
+        this.width = config.width;
+        this.height = config.height;
         this.x = CONFIG.canvas.width / 2 - this.width / 2;
         this.y = -this.height;
-        this.speed = CONFIG.boss.speed;
-        this.health = CONFIG.boss.health;
+        this.speed = config.speed;
+        this.health = Math.floor(config.health * healthMultiplier);
         this.maxHealth = this.health;
-        this.color = '#ff00ff';
+        this.color = config.color;
+        this.weapon = config.weapon;
         this.lastFire = 0;
-        this.fireRate = CONFIG.boss.fireRate;
-        this.points = CONFIG.boss.points;
+        this.fireRate = config.fireRate;
+        this.damage = Math.floor(config.damage * damageMultiplier);
+        this.points = config.points;
         this.moveDirection = 1;
         this.targetY = 100;
+        this.name = config.name;
+        this.pellets = config.pellets || 1;
+        this.spread = config.spread || 0;
+        
+        // Turret support
+        this.hasTurrets = config.hasTurrets || false;
+        if (this.hasTurrets) {
+            this.turretWeapon = config.turretWeapon;
+            this.turretFireRate = config.turretFireRate;
+            this.turretDamage = Math.floor(config.turretDamage * damageMultiplier);
+            this.lastTurretFire = 0;
+        }
+        
+        // Drone deployment
+        this.deployDrones = config.deployDrones || false;
+        if (this.deployDrones) {
+            this.droneDeployRate = config.droneDeployRate;
+            this.lastDroneDeploy = 0;
+        }
     }
 
     update() {
@@ -725,47 +1011,130 @@ class Boss {
             }
         }
         
-        // Boss shooting pattern
         const now = Date.now();
+        
+        // Main weapon shooting
         if (now - this.lastFire > this.fireRate && this.y >= this.targetY) {
             this.shoot();
             this.lastFire = now;
+        }
+        
+        // Turret shooting
+        if (this.hasTurrets && now - this.lastTurretFire > this.turretFireRate && this.y >= this.targetY) {
+            this.shootTurrets();
+            this.lastTurretFire = now;
+        }
+        
+        // Drone deployment
+        if (this.deployDrones && now - this.lastDroneDeploy > this.droneDeployRate && this.y >= this.targetY) {
+            this.deployDrone();
+            this.lastDroneDeploy = now;
         }
 
         return true;
     }
 
     shoot() {
-        // Boss fires multiple projectiles in a pattern
-        for (let i = -1; i <= 1; i++) {
+        if (this.weapon === 'blaster') {
+            // Shoot spread pattern towards player
+            for (let i = 0; i < this.pellets; i++) {
+                const spreadAngle = (Math.random() - 0.5) * this.spread;
+                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * 150;
+                const targetY = gameState.player.y + gameState.player.height / 2;
+                const bullet = new EnemyBullet(
+                    this.x + this.width / 2,
+                    this.y + this.height,
+                    targetX,
+                    targetY,
+                    this.damage,
+                    'blaster'
+                );
+                gameState.enemyBullets.push(bullet);
+            }
+        } else if (this.weapon === 'railgun') {
+            // Shoot intervals straight down
+            for (let i = -1; i <= 1; i++) {
+                const bullet = new EnemyBullet(
+                    this.x + this.width / 2 + (i * 20),
+                    this.y + this.height,
+                    this.x + this.width / 2 + (i * 20),
+                    CONFIG.canvas.height,
+                    this.damage,
+                    'railgun'
+                );
+                gameState.enemyBullets.push(bullet);
+            }
+        } else {
+            // Shoot at player (plasma or laser)
             const bullet = new EnemyBullet(
                 this.x + this.width / 2,
                 this.y + this.height,
-                gameState.player.x + gameState.player.width / 2 + (i * 50),
-                gameState.player.y + gameState.player.height / 2
+                gameState.player.x + gameState.player.width / 2,
+                gameState.player.y + gameState.player.height / 2,
+                this.damage,
+                this.weapon
             );
             gameState.enemyBullets.push(bullet);
         }
     }
+    
+    shootTurrets() {
+        // Left turret
+        const leftBullet = new EnemyBullet(
+            this.x + this.width * 0.25,
+            this.y + this.height / 2,
+            gameState.player.x + gameState.player.width / 2,
+            gameState.player.y + gameState.player.height / 2,
+            this.turretDamage,
+            this.turretWeapon
+        );
+        gameState.enemyBullets.push(leftBullet);
+        
+        // Right turret
+        const rightBullet = new EnemyBullet(
+            this.x + this.width * 0.75,
+            this.y + this.height / 2,
+            gameState.player.x + gameState.player.width / 2,
+            gameState.player.y + gameState.player.height / 2,
+            this.turretDamage,
+            this.turretWeapon
+        );
+        gameState.enemyBullets.push(rightBullet);
+    }
+    
+    deployDrone() {
+        const drone = new EnemyDrone(
+            this.x + this.width / 2,
+            this.y + this.height
+        );
+        gameState.enemyDrones.push(drone);
+    }
 
     draw() {
-        // Draw boss ship body
+        // Draw boss ship body (larger and more imposing)
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x + 10, this.y, this.width - 20, this.height);
+        ctx.fillRect(this.x + 15, this.y, this.width - 30, this.height);
         ctx.beginPath();
         ctx.moveTo(this.x + this.width / 2, this.y + this.height);
         ctx.lineTo(this.x, this.y + this.height / 2);
-        ctx.lineTo(this.x + 10, this.y);
-        ctx.lineTo(this.x + this.width - 10, this.y);
+        ctx.lineTo(this.x + 15, this.y);
+        ctx.lineTo(this.x + this.width - 15, this.y);
         ctx.lineTo(this.x + this.width, this.y + this.height / 2);
         ctx.closePath();
         ctx.fill();
 
         // Draw boss details
         ctx.fillStyle = '#ff0000';
-        ctx.fillRect(this.x + 15, this.y + 20, 10, 10);
-        ctx.fillRect(this.x + this.width - 25, this.y + 20, 10, 10);
-        ctx.fillRect(this.x + this.width / 2 - 5, this.y + 10, 10, 15);
+        ctx.fillRect(this.x + 20, this.y + 25, 12, 12);
+        ctx.fillRect(this.x + this.width - 32, this.y + 25, 12, 12);
+        ctx.fillRect(this.x + this.width / 2 - 7, this.y + 15, 14, 20);
+        
+        // Draw turrets if applicable
+        if (this.hasTurrets) {
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(this.x + this.width * 0.25 - 5, this.y + this.height / 2 - 5, 10, 10);
+            ctx.fillRect(this.x + this.width * 0.75 - 5, this.y + this.height / 2 - 5, 10, 10);
+        }
 
         // Draw health bar
         ctx.fillStyle = '#330000';
@@ -774,10 +1143,10 @@ class Boss {
         ctx.fillRect(this.x, this.y - 12, this.width * (this.health / this.maxHealth), 8);
         
         // Draw boss name
-        ctx.fillStyle = '#ff00ff';
-        ctx.font = '12px monospace';
+        ctx.fillStyle = this.color;
+        ctx.font = '14px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('BOSS', this.x + this.width / 2, this.y - 15);
+        ctx.fillText(this.name, this.x + this.width / 2, this.y - 15);
         ctx.textAlign = 'left';
     }
 
@@ -863,11 +1232,12 @@ class Asteroid {
 
 // Enemy Bullet Class
 class EnemyBullet {
-    constructor(x, y, targetX, targetY) {
+    constructor(x, y, targetX, targetY, damage = 20, weapon = 'plasma') {
         this.x = x;
         this.y = y;
         this.width = 4;
         this.height = 8;
+        this.weapon = weapon;
         
         // Calculate direction to player
         const dx = targetX - x;
@@ -876,8 +1246,29 @@ class EnemyBullet {
         
         this.vx = (dx / distance) * CONFIG.bullet.enemySpeed;
         this.vy = (dy / distance) * CONFIG.bullet.enemySpeed;
-        this.damage = CONFIG.bullet.enemyDamage;
-        this.color = '#ff0000';
+        this.damage = damage;
+        
+        // Set color based on weapon type
+        switch(weapon) {
+            case 'laser':
+                this.color = '#ff0000';
+                this.width = 6;
+                this.height = 12;
+                break;
+            case 'plasma':
+                this.color = '#00ffff';
+                break;
+            case 'railgun':
+                this.color = '#ffff00';
+                this.vx *= 1.5;
+                this.vy *= 1.5;
+                break;
+            case 'blaster':
+                this.color = '#ff8800';
+                break;
+            default:
+                this.color = '#ff0000';
+        }
     }
 
     update() {
@@ -889,10 +1280,19 @@ class EnemyBullet {
     }
 
     draw() {
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-        ctx.fill();
+        if (this.weapon === 'laser') {
+            // Laser beam effect
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - 1, this.y, this.width + 2, this.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(this.x + 1, this.y + 2, this.width - 2, this.height - 4);
+        } else {
+            // Standard circular bullet
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
 }
 
@@ -1272,6 +1672,107 @@ class KamikazeDrone {
     }
 }
 
+// Enemy Drone Class (deployed by battleships and bosses)
+class EnemyDrone {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = CONFIG.enemyDrone.width;
+        this.height = CONFIG.enemyDrone.height;
+        this.speed = CONFIG.enemyDrone.speed;
+        this.health = CONFIG.enemyDrone.health;
+        this.maxHealth = this.health;
+        this.damage = CONFIG.enemyDrone.damage;
+        this.color = CONFIG.enemyDrone.color;
+        this.rotation = 0;
+        this.points = CONFIG.enemyDrone.points;
+        
+        // Set explosion time (drones explode after 1 second)
+        this.explosionTime = Date.now() + CONFIG.enemyDrone.explosionTime;
+        
+        // Move towards player
+        this.targetX = gameState.player.x + gameState.player.width / 2;
+        this.targetY = gameState.player.y + gameState.player.height / 2;
+    }
+
+    update() {
+        const now = Date.now();
+        
+        // Check if explosion time reached
+        if (now >= this.explosionTime) {
+            // Explode and deal damage if near player
+            const dx = (gameState.player.x + gameState.player.width / 2) - (this.x + this.width / 2);
+            const dy = (gameState.player.y + gameState.player.height / 2) - (this.y + this.height / 2);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < 50) {
+                // Close enough to damage player
+                gameState.player.takeDamage(this.damage);
+            }
+            
+            createExplosion(this.x + this.width / 2, this.y + this.height / 2, this.color);
+            return false; // Remove drone
+        }
+        
+        // Move towards last known player position
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance > 0) {
+            this.x += (dx / distance) * this.speed;
+            this.y += (dy / distance) * this.speed;
+        }
+        
+        this.rotation += 0.15; // Spin the drone
+        
+        // Remove if off screen
+        return this.y < CONFIG.canvas.height + this.height && 
+               this.x > -this.width && 
+               this.x < CONFIG.canvas.width + this.width;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
+        ctx.rotate(this.rotation);
+        
+        // Draw drone body (diamond shape)
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -this.height / 2);
+        ctx.lineTo(this.width / 2, 0);
+        ctx.lineTo(0, this.height / 2);
+        ctx.lineTo(-this.width / 2, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw warning center (flashing)
+        const flash = Math.floor(Date.now() / 200) % 2;
+        ctx.fillStyle = flash ? '#ff0000' : '#ffff00';
+        ctx.fillRect(-3, -3, 6, 6);
+        
+        ctx.restore();
+        
+        // Draw health bar if damaged
+        if (this.health < this.maxHealth) {
+            ctx.fillStyle = '#330000';
+            ctx.fillRect(this.x, this.y - 6, this.width, 3);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(this.x, this.y - 6, this.width * (this.health / this.maxHealth), 3);
+        }
+    }
+
+    takeDamage(damage) {
+        this.health -= damage;
+        if (this.health <= 0) {
+            createExplosion(this.x + this.width / 2, this.y + this.height / 2, this.color);
+            return true;
+        }
+        return false;
+    }
+}
+
 // Game Functions
 function startGame() {
     resetGame();
@@ -1324,6 +1825,7 @@ function resetGame() {
     gameState.kamikazeDroneActive = false;
     gameState.kamikazeDronesRemaining = 0;
     gameState.lastDroneSpawn = 0;
+    gameState.enemyDrones = [];
     
     // Apply full equipment if toggle is enabled
     if (gameState.fullEquipMode) {
@@ -1519,15 +2021,37 @@ function spawnEnemy() {
         return;
     }
     
-    // Spawn harder enemies as waves progress
-    const type = Math.random() < 0.2 + (gameState.wave * 0.05) ? 'tough' : 'basic';
-    gameState.enemies.push(new Enemy(type));
+    // Progressive enemy type selection based on wave
+    const wave = gameState.wave;
+    let type;
+    const roll = Math.random();
+    
+    if (wave === 1) {
+        // Wave 1: only small and standard
+        type = roll < 0.6 ? 'small' : 'standard';
+    } else if (wave === 2) {
+        // Wave 2: introduce advanced
+        type = roll < 0.3 ? 'small' : (roll < 0.6 ? 'standard' : 'advanced');
+    } else if (wave === 3) {
+        // Wave 3: introduce heavy
+        type = roll < 0.2 ? 'small' : (roll < 0.5 ? 'standard' : (roll < 0.75 ? 'advanced' : 'heavy'));
+    } else if (wave === 4) {
+        // Wave 4: introduce cruiser
+        type = roll < 0.15 ? 'small' : (roll < 0.35 ? 'standard' : (roll < 0.6 ? 'advanced' : (roll < 0.85 ? 'heavy' : 'cruiser')));
+    } else {
+        // Wave 5+: include battleship
+        type = roll < 0.1 ? 'small' : (roll < 0.25 ? 'standard' : (roll < 0.45 ? 'advanced' : (roll < 0.65 ? 'heavy' : (roll < 0.85 ? 'cruiser' : 'battleship'))));
+    }
+    
+    gameState.enemies.push(new Enemy(type, wave));
     gameState.enemiesInWave++;
 
-    // Occasionally spawn multiple enemies
-    if (Math.random() < 0.3 + (gameState.wave * 0.05)) {
+    // Occasionally spawn multiple enemies (more frequent in higher waves)
+    if (Math.random() < 0.3 + (wave * 0.03)) {
         setTimeout(() => {
-            gameState.enemies.push(new Enemy(type));
+            // Spawn a smaller enemy type for variety
+            const secondType = roll < 0.5 ? 'small' : 'standard';
+            gameState.enemies.push(new Enemy(secondType, wave));
             gameState.enemiesInWave++;
         }, 200);
     }
@@ -1535,7 +2059,13 @@ function spawnEnemy() {
 
 function spawnBoss() {
     gameState.bossActive = true;
-    gameState.boss = new Boss();
+    const wave = gameState.wave;
+    
+    // Select boss type based on wave (cycling through types)
+    const bossTypes = ['blaster', 'blasterDrone', 'plasmaDrone', 'railgunTurret'];
+    const bossType = bossTypes[(wave - 1) % bossTypes.length];
+    
+    gameState.boss = new Boss(bossType, wave);
 }
 
 function spawnAsteroid() {
@@ -1963,6 +2493,56 @@ function checkCollisions() {
             }
         }
     }
+    
+    // Bullets vs Enemy Drones
+    for (let i = gameState.bullets.length - 1; i >= 0; i--) {
+        const bullet = gameState.bullets[i];
+        
+        for (let j = gameState.enemyDrones.length - 1; j >= 0; j--) {
+            const drone = gameState.enemyDrones[j];
+            
+            if (bullet.x < drone.x + drone.width &&
+                bullet.x + bullet.width > drone.x &&
+                bullet.y < drone.y + drone.height &&
+                bullet.y + bullet.height > drone.y) {
+                
+                gameState.bullets.splice(i, 1);
+                
+                if (drone.takeDamage(bullet.damage)) {
+                    gameState.enemyDrones.splice(j, 1);
+                    gameState.score += drone.points;
+                }
+                
+                updateHUD();
+                break;
+            }
+        }
+    }
+    
+    // Turret Bullets vs Enemy Drones
+    for (let i = gameState.turretBullets.length - 1; i >= 0; i--) {
+        const bullet = gameState.turretBullets[i];
+        
+        for (let j = gameState.enemyDrones.length - 1; j >= 0; j--) {
+            const drone = gameState.enemyDrones[j];
+            
+            if (bullet.x < drone.x + drone.width &&
+                bullet.x + bullet.width > drone.x &&
+                bullet.y < drone.y + drone.height &&
+                bullet.y + bullet.height > drone.y) {
+                
+                gameState.turretBullets.splice(i, 1);
+                
+                if (drone.takeDamage(bullet.damage)) {
+                    gameState.enemyDrones.splice(j, 1);
+                    gameState.score += drone.points;
+                }
+                
+                updateHUD();
+                break;
+            }
+        }
+    }
 }
 
 function updateHUD() {
@@ -2182,6 +2762,9 @@ function update() {
     // Update kamikaze drones
     gameState.kamikazeDrones = gameState.kamikazeDrones.filter(drone => drone.update());
 
+    // Update enemy drones
+    gameState.enemyDrones = gameState.enemyDrones.filter(drone => drone.update());
+
     // Update enemies
     gameState.enemies = gameState.enemies.filter(enemy => enemy.update());
 
@@ -2224,6 +2807,7 @@ function render() {
     gameState.powerups.forEach(powerup => powerup.draw());
     gameState.particles.forEach(particle => particle.draw());
     gameState.kamikazeDrones.forEach(drone => drone.draw());
+    gameState.enemyDrones.forEach(drone => drone.draw());
     
     // Draw repair bot indicator (small robot circling the ship)
     if (gameState.repairBotActive) {
