@@ -879,6 +879,51 @@ class Enemy {
     }
 
     draw() {
+        const now = Date.now();
+        
+        // Animated engine flame effect (enemies fly downward, so flame at top/back)
+        const flamePulse = Math.sin(now / 40) * 0.5 + 0.5; // Faster pulse for enemies
+        const flameFlicker = Math.random() * 0.3 + 0.7;
+        
+        // Scale flame size based on ship size (smaller ships = smaller flames)
+        const flameScale = this.width / 30; // 30 is standard width
+        const baseFlameHeight = (4 + flamePulse * 3) * flameFlicker * flameScale;
+        
+        // Draw flame at the back (top) of the enemy ship
+        const centerX = this.x + this.width / 2;
+        const flameY = this.y; // Top of the ship
+        
+        // Single center flame for enemies (they're smaller than player)
+        // Outer flame (reddish/orange - enemy theme)
+        ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
+        ctx.beginPath();
+        ctx.moveTo(centerX, flameY);
+        ctx.lineTo(centerX - 2 * flameScale, flameY - baseFlameHeight * 0.6);
+        ctx.lineTo(centerX, flameY - baseFlameHeight);
+        ctx.lineTo(centerX + 2 * flameScale, flameY - baseFlameHeight * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Inner flame (bright orange/yellow)
+        ctx.fillStyle = `rgba(255, 200, 0, ${0.8 * flameFlicker})`;
+        ctx.beginPath();
+        ctx.moveTo(centerX, flameY);
+        ctx.lineTo(centerX - 1 * flameScale, flameY - baseFlameHeight * 0.7);
+        ctx.lineTo(centerX, flameY - baseFlameHeight * 0.85);
+        ctx.lineTo(centerX + 1 * flameScale, flameY - baseFlameHeight * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Core (bright white/yellow hot core)
+        ctx.fillStyle = `rgba(255, 255, 100, ${0.9 * flameFlicker})`;
+        ctx.beginPath();
+        ctx.moveTo(centerX, flameY);
+        ctx.lineTo(centerX - 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
+        ctx.lineTo(centerX, flameY - baseFlameHeight * 0.5);
+        ctx.lineTo(centerX + 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
+        ctx.closePath();
+        ctx.fill();
+        
         // Draw enemy ship
         ctx.fillStyle = this.color;
         ctx.beginPath();
