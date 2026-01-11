@@ -355,7 +355,7 @@ const gameState = {
     turretInBurst: false, // Track if currently in burst mode
     bossActive: false,
     waveComplete: false,
-    railgunContinuousFire: false,
+    autoFire: false,
     godMode: true,
     fullEquipMode: false,
     repairBotActive: false,
@@ -424,12 +424,8 @@ document.addEventListener('keydown', (e) => {
     
     if (e.key === ' ' && !gameState.isPaused && !gameState.isGameOver) {
         e.preventDefault();
-        // Toggle continuous fire for railgun, otherwise fire once
-        if (gameState.currentWeapon === 'railgun') {
-            gameState.railgunContinuousFire = !gameState.railgunContinuousFire;
-        } else {
-            fireBullet();
-        }
+        // Toggle auto-fire for all weapons
+        gameState.autoFire = !gameState.autoFire;
     }
     
     if (e.key === 'Escape') {
@@ -1949,7 +1945,7 @@ function resetGame() {
     gameState.turretInBurst = false;
     gameState.bossActive = false;
     gameState.waveComplete = false;
-    gameState.railgunContinuousFire = false;
+    gameState.autoFire = false;
     gameState.repairBotActive = false;
     gameState.repairBotEndTime = 0;
     gameState.lastDamageTime = 0;
@@ -2103,7 +2099,6 @@ function switchWeapon() {
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     const currentIndex = weapons.indexOf(gameState.currentWeapon);
     gameState.currentWeapon = weapons[(currentIndex + 1) % weapons.length];
-    gameState.railgunContinuousFire = false; // Disable continuous fire when switching
     updateHUD();
 }
 
@@ -2764,9 +2759,6 @@ function checkCollisions() {
 function updateHUD() {
     document.getElementById('score').textContent = gameState.score;
     document.getElementById('wave').textContent = gameState.wave;
-    const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
-    let weaponText = weaponConfig.name.toUpperCase();
-    document.getElementById('weapon-name').textContent = weaponText;
     
     if (gameState.player) {
         const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
@@ -2864,8 +2856,8 @@ function update() {
     spawnEnemy();
     spawnAsteroid();
 
-    // Railgun continuous fire
-    if (gameState.railgunContinuousFire && gameState.currentWeapon === 'railgun') {
+    // Auto-fire for all weapons
+    if (gameState.autoFire) {
         fireBullet();
     }
 
