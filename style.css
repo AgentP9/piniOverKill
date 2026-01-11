@@ -328,6 +328,33 @@ body {
     color: #0f0;
 }
 
+#weapons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    font-size: 0.8em;
+}
+
+.weapon-level {
+    display: flex;
+    justify-content: space-between;
+    color: #0a0;
+}
+
+.weapon-level span {
+    font-weight: bold;
+}
+
+.weapon-active {
+    color: #ff0;
+}
+
+.weapon-max-level {
+    color: #0f0;
+    text-shadow: 0 0 3px #0f0;
+}
+
 @media (max-width: 850px) {
     :root {
         --border-width: 0px;

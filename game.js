@@ -50,6 +50,27 @@ const CONFIG = {
             description: 'Shotgun-style spread'
         }
     },
+    weaponLevels: {
+        maxLevel: 9,
+        // Railgun level configurations
+        railgun: {
+            levels: {
+                1: { fireRate: 200, damage: 2, bullets: 1, description: 'Low fire, low damage' },
+                2: { fireRate: 150, damage: 2, bullets: 1, description: 'Medium fire, low damage' },
+                3: { fireRate: 100, damage: 2, bullets: 1, description: 'High fire, low damage' },
+                4: { fireRate: 150, damage: 4, bullets: 1, description: 'Medium fire, medium damage' },
+                5: { fireRate: 150, damage: 2, bullets: 2, description: 'Two bullets, medium fire, low damage' },
+                6: { fireRate: 100, damage: 2, bullets: 2, description: 'Two bullets, high fire, low damage' },
+                7: { fireRate: 150, damage: 4, bullets: 2, description: 'Two bullets, medium fire, medium damage' },
+                8: { fireRate: 100, damage: 4, bullets: 2, description: 'Two bullets, high fire, medium damage' },
+                9: { fireRate: 100, damage: 6, bullets: 2, description: 'Two bullets, high fire, high damage' }
+            }
+        },
+        // Other weapons use simple multiplier system
+        laser: { damagePerLevel: 5, fireRateImprovement: 0.05 },
+        plasma: { damagePerLevel: 2, fireRateImprovement: 0.05 },
+        blaster: { damagePerLevel: 1, fireRateImprovement: 0.05 }
+    },
     enemy: {
         spawnRate: 2000,
         speed: 2,
@@ -235,7 +256,7 @@ const CONFIG = {
         notificationDuration: 2000 // 2 seconds
     },
     addons: {
-        maxLevel: 10,
+        maxLevel: 9,
         // Visual scaling factors per level
         visualScaling: {
             wings: 0.05,  // 5% size increase per level
@@ -316,6 +337,12 @@ const gameState = {
     weaponUpgrades: {
         rateOfFire: 1,
         damageRate: 1
+    },
+    weaponLevels: {
+        laser: 1,
+        plasma: 1,
+        railgun: 1,
+        blaster: 1
     },
     shipUpgrades: {
         wingsLevel: 0, // 0 = not installed, 1-10 = level
@@ -971,7 +998,16 @@ class Bullet {
         this.height = weapon === 'laser' ? 20 : (weapon === 'blaster' ? 6 : 12);
         const weaponConfig = CONFIG.weapons[weapon];
         this.speed = weaponConfig.speed;
-        this.damage = weaponConfig.damage * gameState.weaponUpgrades.damageRate;
+        
+        // Calculate damage based on weapon type
+        if (weapon === 'railgun') {
+            const railgunLevel = gameState.weaponLevels.railgun;
+            const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
+            this.damage = levelConfig.damage * gameState.weaponUpgrades.damageRate;
+        } else {
+            this.damage = weaponConfig.damage * gameState.weaponUpgrades.damageRate;
+        }
+        
         this.color = weaponConfig.color;
         this.weapon = weapon;
         this.vx = vx;
@@ -1568,6 +1604,34 @@ class Powerup {
                 ctx.fillRect(-7, 0, 2, 4);
                 ctx.fillRect(5, 0, 2, 4);
                 break;
+            case 'weaponLevel':
+                // Weapon level upgrade icon (star/badge)
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                // Draw star
+                for (let i = 0; i < 5; i++) {
+                    const angle = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+                    const radius = i % 2 === 0 ? 8 : 4;
+                    const x = Math.cos(angle) * radius;
+                    const y = Math.sin(angle) * radius;
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                ctx.fill();
+                // Draw level up arrow
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.moveTo(0, -3);
+                ctx.lineTo(-2, 0);
+                ctx.lineTo(2, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillRect(-1, 0, 2, 3);
+                break;
         }
         
         ctx.restore();
@@ -1865,6 +1929,12 @@ function resetGame() {
         rateOfFire: 1,
         damageRate: 1
     };
+    gameState.weaponLevels = {
+        laser: 1,
+        plasma: 1,
+        railgun: 1,
+        blaster: 1
+    };
     gameState.shipUpgrades = {
         wingsLevel: 0,
         noseLevel: 0,
@@ -1946,13 +2016,22 @@ function fireBullet() {
     const now = Date.now();
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
     
-    const adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+    // Calculate fire rate based on weapon type
+    let adjustedFireRate;
+    if (gameState.currentWeapon === 'railgun') {
+        const railgunLevel = gameState.weaponLevels.railgun;
+        const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
+        adjustedFireRate = levelConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+    } else {
+        adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+    }
     
     if (now - gameState.lastFire < adjustedFireRate) return;
 
     gameState.lastFire = now;
     const player = gameState.player;
     const centerX = player.x + player.width / 2;
+    const wingsLevel = gameState.shipUpgrades.wingsLevel;
 
     if (gameState.currentWeapon === 'blaster') {
         // Blaster fires multiple pellets in a spread
@@ -1962,12 +2041,43 @@ function fireBullet() {
             const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * blasterConfig.spreadMultiplier, 0);
             gameState.bullets.push(bullet);
         }
+    } else if (gameState.currentWeapon === 'railgun') {
+        // Railgun has special level-based behavior
+        const railgunLevel = gameState.weaponLevels.railgun;
+        const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
+        
+        if (levelConfig.bullets === 1) {
+            // Single bullet mode (L1-L4): fires from center
+            gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
+        } else {
+            // Dual bullet mode (L5-L9): fires from wings in parallel
+            // Calculate wing positions - center of wings based on visual scaling
+            if (wingsLevel > 0) {
+                const levelScale = 1 + (wingsLevel - 1) * CONFIG.addons.visualScaling.wings;
+                const wingWidth = 15 * levelScale;
+                const wingYOffset = player.height / 2 + 9; // Middle of wing cannon
+                
+                // Left wing bullet - from center of left wing
+                gameState.bullets.push(new Bullet(player.x - wingWidth / 2, player.y + wingYOffset, gameState.currentWeapon));
+                // Right wing bullet - from center of right wing
+                gameState.bullets.push(new Bullet(player.x + player.width + wingWidth / 2, player.y + wingYOffset, gameState.currentWeapon));
+            } else {
+                // No wings installed, fire from ship sides as fallback
+                gameState.bullets.push(new Bullet(player.x + 5, player.y + player.height / 2, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(player.x + player.width - 5, player.y + player.height / 2, gameState.currentWeapon));
+            }
+        }
+        
+        // Wings addon still shoots additional bullets for other weapons at railgun L1-L4
+        if (levelConfig.bullets === 1 && wingsLevel > 0) {
+            gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
+            gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
+        }
     } else {
         // Standard shot from center
         gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
         
         // Wings addon shoots from sides
-        const wingsLevel = gameState.shipUpgrades.wingsLevel;
         if (wingsLevel > 0) {
             gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
             gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
@@ -2167,7 +2277,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret'];
+    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -2501,6 +2611,16 @@ function checkCollisions() {
                     gameState.lastDroneSpawn = Date.now();
                     showPickupNotification(`KAMIKAZE DRONES ACTIVATED (x${CONFIG.kamikazeDrone.dronesPerPickup})`);
                     break;
+                case 'weaponLevel':
+                    const currentWeapon = gameState.currentWeapon;
+                    if (gameState.weaponLevels[currentWeapon] < CONFIG.weaponLevels.maxLevel) {
+                        gameState.weaponLevels[currentWeapon]++;
+                        const level = gameState.weaponLevels[currentWeapon];
+                        showPickupNotification(`${CONFIG.weapons[currentWeapon].name.toUpperCase()} LEVEL ${level}`);
+                    } else {
+                        showPickupNotification(`${CONFIG.weapons[currentWeapon].name.toUpperCase()} MAX LEVEL`);
+                    }
+                    break;
             }
             
             createExplosion(powerup.x + powerup.width / 2, powerup.y + powerup.height / 2, '#ffff00');
@@ -2682,6 +2802,30 @@ function updateAddonStatus() {
             droneElement.classList.remove('addon-active');
         }
     }
+    
+    // Update weapon levels display
+    const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
+    weapons.forEach(weapon => {
+        const element = document.getElementById(`weapon-${weapon}`);
+        if (element) {
+            const statusSpan = element.querySelector('span');
+            const level = gameState.weaponLevels[weapon];
+            statusSpan.textContent = `L${level}`;
+            
+            // Remove all classes first
+            element.classList.remove('weapon-active', 'weapon-max-level');
+            
+            // Highlight current weapon
+            if (gameState.currentWeapon === weapon) {
+                element.classList.add('weapon-active');
+            }
+            
+            // Highlight max level weapons
+            if (level === CONFIG.weaponLevels.maxLevel) {
+                element.classList.add('weapon-max-level');
+            }
+        }
+    });
 }
 
 function drawBackground() {
