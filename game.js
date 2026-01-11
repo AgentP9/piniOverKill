@@ -1435,7 +1435,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret'
+        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -1963,6 +1963,12 @@ function resetGame() {
             wingsLevel: CONFIG.addons.maxLevel,
             noseLevel: CONFIG.addons.maxLevel,
             turretLevel: CONFIG.addons.maxLevel
+        };
+        gameState.weaponLevels = {
+            laser: CONFIG.weaponLevels.maxLevel,
+            plasma: CONFIG.weaponLevels.maxLevel,
+            railgun: CONFIG.weaponLevels.maxLevel,
+            blaster: CONFIG.weaponLevels.maxLevel
         };
         // Boost player stats to max for all addons
         gameState.player.maxStructure += CONFIG.addons.wings.structurePerLevel * CONFIG.addons.maxLevel;
