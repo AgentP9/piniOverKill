@@ -1251,11 +1251,11 @@ class EnemyBullet {
         this.vy = (dy / distance) * CONFIG.bullet.enemySpeed;
         this.damage = damage;
         
-        // Set color based on weapon type
+        // Set weapon-specific properties (color, size, speed)
         switch(weapon) {
             case 'laser':
                 this.color = '#ff0000';
-                this.width = 6;
+                this.width = 6;  // Laser is larger
                 this.height = 12;
                 break;
             case 'plasma':
@@ -1263,7 +1263,7 @@ class EnemyBullet {
                 break;
             case 'railgun':
                 this.color = '#ffff00';
-                this.vx *= 1.5;
+                this.vx *= 1.5;  // Railgun is faster
                 this.vy *= 1.5;
                 break;
             case 'blaster':
@@ -2034,8 +2034,8 @@ function spawnEnemy() {
     // Occasionally spawn multiple enemies (more frequent in higher waves)
     if (Math.random() < 0.3 + (wave * 0.03)) {
         setTimeout(() => {
-            // Spawn a smaller enemy type for variety
-            const secondType = Math.random() < 0.5 ? 'small' : 'standard';
+            // Spawn another enemy (prefer smaller/weaker types for variety)
+            const secondType = wave === 1 ? 'small' : (Math.random() < 0.6 ? 'small' : 'standard');
             gameState.enemies.push(new Enemy(secondType, wave));
             gameState.enemiesInWave++;
         }, 200);
