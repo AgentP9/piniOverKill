@@ -142,6 +142,9 @@ const CONFIG = {
     boss: {
         spawnThreshold: 15,
         blasterSpreadRange: 150, // Range for boss blaster spread calculation
+        // Boss difficulty scaling per wave
+        healthScaling: 0.05, // 5% increase per wave
+        damageScaling: 0.04, // 4% increase per wave
         // Star Destroyer variants
         types: {
             blaster: {
@@ -820,7 +823,8 @@ class Enemy {
                     this.y + this.height,
                     targetX,
                     targetY,
-                    this.damage
+                    this.damage,
+                    'blaster'
                 );
                 gameState.enemyBullets.push(bullet);
             }
@@ -962,9 +966,9 @@ class Boss {
         this.type = type;
         const config = CONFIG.boss.types[type];
         
-        // Apply wave-based scaling (less aggressive than regular enemies)
-        const healthMultiplier = 1 + (wave - 1) * 0.05; // 5% per wave
-        const damageMultiplier = 1 + (wave - 1) * 0.04; // 4% per wave
+        // Apply wave-based scaling
+        const healthMultiplier = 1 + (wave - 1) * CONFIG.boss.healthScaling;
+        const damageMultiplier = 1 + (wave - 1) * CONFIG.boss.damageScaling;
         
         this.width = config.width;
         this.height = config.height;
@@ -1693,7 +1697,8 @@ class EnemyDrone {
         // Set explosion time (drones explode after 1 second)
         this.explosionTime = Date.now() + CONFIG.enemyDrone.explosionTime;
         
-        // Move towards player
+        // Lock on to player's current position (drones don't track, they kamikaze to a fixed point)
+        // This gives the player a chance to dodge and makes drones more predictable
         this.targetX = gameState.player.x + gameState.player.width / 2;
         this.targetY = gameState.player.y + gameState.player.height / 2;
     }
@@ -2034,7 +2039,8 @@ function spawnEnemy() {
     // Occasionally spawn multiple enemies (more frequent in higher waves)
     if (Math.random() < 0.3 + (wave * 0.03)) {
         setTimeout(() => {
-            // Spawn another enemy (prefer smaller/weaker types for variety)
+            // Intentionally spawn weaker enemy types as secondary spawns for balance
+            // This prevents overwhelming the player with too many strong enemies at once
             const secondType = wave === 1 ? 'small' : (Math.random() < 0.6 ? 'small' : 'standard');
             gameState.enemies.push(new Enemy(secondType, wave));
             gameState.enemiesInWave++;
