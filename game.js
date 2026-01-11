@@ -68,7 +68,8 @@ const CONFIG = {
                 fireRate: 1800,
                 damage: 15,
                 color: '#ff6666',
-                points: 8
+                points: 8,
+                bulletSpeed: 5 // Faster bullet speed to prevent ship from overtaking shots
             },
             standard: {
                 health: 30,
@@ -767,6 +768,7 @@ class Enemy {
         this.points = config.points;
         this.pellets = config.pellets || 1;
         this.spread = config.spread || 0;
+        this.bulletSpeed = config.bulletSpeed || CONFIG.bullet.enemySpeed; // Use custom speed or default
         
         // Turret support for cruiser and battleship
         this.hasTurrets = config.hasTurrets || false;
@@ -824,7 +826,8 @@ class Enemy {
                     targetX,
                     targetY,
                     this.damage,
-                    'blaster'
+                    'blaster',
+                    this.bulletSpeed
                 );
                 gameState.enemyBullets.push(bullet);
             }
@@ -836,7 +839,8 @@ class Enemy {
                 gameState.player.x + gameState.player.width / 2,
                 gameState.player.y + gameState.player.height / 2,
                 this.damage,
-                this.weapon
+                this.weapon,
+                this.bulletSpeed
             );
             gameState.enemyBullets.push(bullet);
         }
@@ -1239,20 +1243,23 @@ class Asteroid {
 
 // Enemy Bullet Class
 class EnemyBullet {
-    constructor(x, y, targetX, targetY, damage = 20, weapon = 'plasma') {
+    constructor(x, y, targetX, targetY, damage = 20, weapon = 'plasma', bulletSpeed = null) {
         this.x = x;
         this.y = y;
         this.width = 4;
         this.height = 8;
         this.weapon = weapon;
         
+        // Use custom bullet speed or default
+        const speed = bulletSpeed !== null ? bulletSpeed : CONFIG.bullet.enemySpeed;
+        
         // Calculate direction to player
         const dx = targetX - x;
         const dy = targetY - y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        this.vx = (dx / distance) * CONFIG.bullet.enemySpeed;
-        this.vy = (dy / distance) * CONFIG.bullet.enemySpeed;
+        this.vx = (dx / distance) * speed;
+        this.vy = (dy / distance) * speed;
         this.damage = damage;
         
         // Set weapon-specific properties (color, size, speed)
