@@ -999,13 +999,16 @@ class Bullet {
         const weaponConfig = CONFIG.weapons[weapon];
         this.speed = weaponConfig.speed;
         
-        // Calculate damage based on weapon type
+        // Calculate damage based on weapon type and level
         if (weapon === 'railgun') {
             const railgunLevel = gameState.weaponLevels.railgun;
             const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
             this.damage = levelConfig.damage * gameState.weaponUpgrades.damageRate;
         } else {
-            this.damage = weaponConfig.damage * gameState.weaponUpgrades.damageRate;
+            // Other weapons use base damage plus level-based improvements
+            const weaponLevel = gameState.weaponLevels[weapon];
+            const levelBonus = (weaponLevel - 1) * CONFIG.weaponLevels[weapon].damagePerLevel;
+            this.damage = (weaponConfig.damage + levelBonus) * gameState.weaponUpgrades.damageRate;
         }
         
         this.color = weaponConfig.color;
@@ -2022,14 +2025,17 @@ function fireBullet() {
     const now = Date.now();
     const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
     
-    // Calculate fire rate based on weapon type
+    // Calculate fire rate based on weapon type and level
     let adjustedFireRate;
     if (gameState.currentWeapon === 'railgun') {
         const railgunLevel = gameState.weaponLevels.railgun;
         const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
         adjustedFireRate = levelConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
     } else {
-        adjustedFireRate = weaponConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+        // Other weapons use fire rate improvement per level
+        const weaponLevel = gameState.weaponLevels[gameState.currentWeapon];
+        const fireRateMultiplier = 1 + (weaponLevel - 1) * CONFIG.weaponLevels[gameState.currentWeapon].fireRateImprovement;
+        adjustedFireRate = weaponConfig.fireRate / (gameState.weaponUpgrades.rateOfFire * fireRateMultiplier);
     }
     
     if (now - gameState.lastFire < adjustedFireRate) return;
@@ -2055,6 +2061,12 @@ function fireBullet() {
         if (levelConfig.bullets === 1) {
             // Single bullet mode (L1-L4): fires from center
             gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
+            
+            // Wings addon still shoots additional bullets for railgun L1-L4 if wings are installed
+            if (wingsLevel > 0) {
+                gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
+            }
         } else {
             // Dual bullet mode (L5-L9): fires from wings in parallel
             // Calculate wing positions - center of wings based on visual scaling
@@ -2073,14 +2085,8 @@ function fireBullet() {
                 gameState.bullets.push(new Bullet(player.x + player.width - 5, player.y + player.height / 2, gameState.currentWeapon));
             }
         }
-        
-        // Wings addon still shoots additional bullets for other weapons at railgun L1-L4
-        if (levelConfig.bullets === 1 && wingsLevel > 0) {
-            gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
-            gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
-        }
     } else {
-        // Standard shot from center
+        // Standard shot from center for laser and plasma
         gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
         
         // Wings addon shoots from sides
