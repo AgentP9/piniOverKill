@@ -56,6 +56,7 @@ const CONFIG = {
         // Wave-based difficulty scaling
         healthScaling: 0.1, // 10% increase per wave
         damageScaling: 0.08, // 8% increase per wave
+        blasterSpreadRange: 100, // Range for blaster spread calculation
         // Enemy type definitions
         types: {
             small: {
@@ -140,6 +141,7 @@ const CONFIG = {
     },
     boss: {
         spawnThreshold: 15,
+        blasterSpreadRange: 150, // Range for boss blaster spread calculation
         // Star Destroyer variants
         types: {
             blaster: {
@@ -271,7 +273,8 @@ const CONFIG = {
         damage: 15,
         color: '#ffaa00',
         points: 5,
-        explosionTime: 1000 // Drones explode after 1 second
+        explosionTime: 1000, // Drones explode after 1 second
+        explosionRadius: 50 // Radius for damage calculation
     },
     wave: {
         completionDelay: 3000
@@ -810,7 +813,7 @@ class Enemy {
             // Shoot spread pattern
             for (let i = 0; i < this.pellets; i++) {
                 const spreadAngle = (Math.random() - 0.5) * this.spread;
-                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * 100;
+                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * CONFIG.enemy.blasterSpreadRange;
                 const targetY = gameState.player.y + gameState.player.height / 2;
                 const bullet = new EnemyBullet(
                     this.x + this.width / 2,
@@ -1039,7 +1042,7 @@ class Boss {
             // Shoot spread pattern towards player
             for (let i = 0; i < this.pellets; i++) {
                 const spreadAngle = (Math.random() - 0.5) * this.spread;
-                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * 150;
+                const targetX = gameState.player.x + gameState.player.width / 2 + spreadAngle * CONFIG.boss.blasterSpreadRange;
                 const targetY = gameState.player.y + gameState.player.height / 2;
                 const bullet = new EnemyBullet(
                     this.x + this.width / 2,
@@ -1705,7 +1708,7 @@ class EnemyDrone {
             const dy = (gameState.player.y + gameState.player.height / 2) - (this.y + this.height / 2);
             const distance = Math.sqrt(dx * dx + dy * dy);
             
-            if (distance < 50) {
+            if (distance < CONFIG.enemyDrone.explosionRadius) {
                 // Close enough to damage player
                 gameState.player.takeDamage(this.damage);
             }
@@ -2023,25 +2026,7 @@ function spawnEnemy() {
     
     // Progressive enemy type selection based on wave
     const wave = gameState.wave;
-    let type;
-    const roll = Math.random();
-    
-    if (wave === 1) {
-        // Wave 1: only small and standard
-        type = roll < 0.6 ? 'small' : 'standard';
-    } else if (wave === 2) {
-        // Wave 2: introduce advanced
-        type = roll < 0.3 ? 'small' : (roll < 0.6 ? 'standard' : 'advanced');
-    } else if (wave === 3) {
-        // Wave 3: introduce heavy
-        type = roll < 0.2 ? 'small' : (roll < 0.5 ? 'standard' : (roll < 0.75 ? 'advanced' : 'heavy'));
-    } else if (wave === 4) {
-        // Wave 4: introduce cruiser
-        type = roll < 0.15 ? 'small' : (roll < 0.35 ? 'standard' : (roll < 0.6 ? 'advanced' : (roll < 0.85 ? 'heavy' : 'cruiser')));
-    } else {
-        // Wave 5+: include battleship
-        type = roll < 0.1 ? 'small' : (roll < 0.25 ? 'standard' : (roll < 0.45 ? 'advanced' : (roll < 0.65 ? 'heavy' : (roll < 0.85 ? 'cruiser' : 'battleship'))));
-    }
+    const type = selectEnemyTypeForWave(wave);
     
     gameState.enemies.push(new Enemy(type, wave));
     gameState.enemiesInWave++;
@@ -2050,7 +2035,7 @@ function spawnEnemy() {
     if (Math.random() < 0.3 + (wave * 0.03)) {
         setTimeout(() => {
             // Spawn a smaller enemy type for variety
-            const secondType = roll < 0.5 ? 'small' : 'standard';
+            const secondType = Math.random() < 0.5 ? 'small' : 'standard';
             gameState.enemies.push(new Enemy(secondType, wave));
             gameState.enemiesInWave++;
         }, 200);
@@ -2066,6 +2051,47 @@ function spawnBoss() {
     const bossType = bossTypes[(wave - 1) % bossTypes.length];
     
     gameState.boss = new Boss(bossType, wave);
+}
+
+function selectEnemyTypeForWave(wave) {
+    const roll = Math.random();
+    
+    // Wave 1: only small and standard
+    if (wave === 1) {
+        return roll < 0.6 ? 'small' : 'standard';
+    }
+    
+    // Wave 2: introduce advanced
+    if (wave === 2) {
+        if (roll < 0.3) return 'small';
+        if (roll < 0.6) return 'standard';
+        return 'advanced';
+    }
+    
+    // Wave 3: introduce heavy
+    if (wave === 3) {
+        if (roll < 0.2) return 'small';
+        if (roll < 0.5) return 'standard';
+        if (roll < 0.75) return 'advanced';
+        return 'heavy';
+    }
+    
+    // Wave 4: introduce cruiser
+    if (wave === 4) {
+        if (roll < 0.15) return 'small';
+        if (roll < 0.35) return 'standard';
+        if (roll < 0.6) return 'advanced';
+        if (roll < 0.85) return 'heavy';
+        return 'cruiser';
+    }
+    
+    // Wave 5+: include battleship
+    if (roll < 0.1) return 'small';
+    if (roll < 0.25) return 'standard';
+    if (roll < 0.45) return 'advanced';
+    if (roll < 0.65) return 'heavy';
+    if (roll < 0.85) return 'cruiser';
+    return 'battleship';
 }
 
 function spawnAsteroid() {
