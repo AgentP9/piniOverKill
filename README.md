@@ -28,12 +28,11 @@ PiniOverKill is a retro-style space shooter featuring:
 - **Progressive spawning**: Enemy difficulty increases with each wave
 
 ### Power-ups
-- **Fire Rate Upgrade** (Yellow Clock): Increases weapon fire rate
-- **Damage Upgrade** (Red/Yellow Square): Increases weapon damage
 - **Shield Heal** (Cyan Shield with +): Restores 30 shield points
 - **Shield Boost** (Cyan Shield with Arrow): Increases maximum shield capacity by 25
 - **Structure Repair** (Orange Wrench): Repairs 40 structure points
 - **Repair Bot** (Green Robot): Deploys a bot that repairs structure over 15 seconds
+- **Weapon Level** (Yellow Star): Upgrades the currently selected weapon's level
 
 ### Leveled Addons (Max Level: 10)
 - **Wing Cannons** (Green Wings): Adds side cannons to your ship. Each level increases structure capacity by 10 points
@@ -129,10 +128,11 @@ The application runs in a lightweight Docker container:
 - Every 20 enemies defeated advances to the next wave
 
 ### Weapon Levels
-- **Level 1**: Single shot
-- **Level 2**: Dual shots
-- **Level 3**: Triple shots
-- **Spread Mode**: Three-way spread shot (temporary)
+Each weapon has 9 levels that can be upgraded through pickups:
+- **Laser** (Single mighty shot): Base 1200ms fire rate, 50 damage. Gains +5 damage and +5% fire rate per level
+- **Plasma** (Balanced): Base 400ms fire rate, 15 damage. Gains +2 damage and +5% fire rate per level  
+- **Railgun** (Rapid fire): Complex level system with varying fire rates (100-200ms), damage (2-6), and bullet counts (1-2)
+- **Blaster** (Spread shot): Base 600ms fire rate, 8 damage per pellet (5 pellets). Gains +1 damage and +5% fire rate per level
 
 ## Technology Stack
 

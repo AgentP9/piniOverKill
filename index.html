@@ -13,7 +13,10 @@
             <div class="menu-overlay">
                 <h1>PINI OVERKILL</h1>
                 <p class="subtitle">A Vertical Scrolling Shooter</p>
-                <button id="start-button" class="game-button">START GAME</button>
+                <div class="menu-buttons">
+                    <button id="start-button" class="game-button">START GAME</button>
+                    <button id="weapons-button" class="game-button">SHOW WEAPONS</button>
+                </div>
                 
                 <div class="godmode-toggle">
                     <label>
@@ -39,18 +42,13 @@
                     
                     <div class="menu-column">
                         <div class="info-box">
-                            <h2>WEAPONS</h2>
-                            <p><strong>Laser:</strong> Mighty shot</p>
-                            <p><strong>Plasma:</strong> Balanced</p>
-                            <p><strong>Railgun:</strong> Rapid fire</p>
-                            <p><strong>Blaster:</strong> Spread shot</p>
+                            <h2>MISSION</h2>
+                            <p>Destroy enemies and asteroids</p>
+                            <p>Defeat the boss at each wave end</p>
+                            <p>Collect power-ups to enhance your ship</p>
+                            <p>Survive as long as possible</p>
                         </div>
                     </div>
-                </div>
-                
-                <div class="info-box-wide">
-                    <h2>MISSION</h2>
-                    <p>Destroy enemies and asteroids • Defeat the boss at each wave end • Collect power-ups to enhance your ship</p>
                 </div>
             </div>
         </div>
@@ -112,6 +110,70 @@
             <p class="final-wave">WAVES COMPLETED: <span id="final-wave">0</span></p>
             <button id="restart-button" class="game-button">PLAY AGAIN</button>
             <button id="menu-button" class="game-button">MAIN MENU</button>
+        </div>
+
+        <div id="weapons-overview-screen" class="screen" style="display: none;">
+            <canvas id="weapons-canvas"></canvas>
+            <div class="menu-overlay">
+                <h1>WEAPONS</h1>
+                <div class="weapons-grid">
+                    <div class="weapon-card">
+                        <h2>LASER</h2>
+                        <div class="weapon-stats">
+                            <p><strong>Type:</strong> Single mighty shot</p>
+                            <p><strong>Base Fire Rate:</strong> 1200ms</p>
+                            <p><strong>Base Damage:</strong> 50</p>
+                            <p><strong>Base Speed:</strong> 12</p>
+                            <p><strong>Levels:</strong> 1-9</p>
+                            <p class="stat-info">• +5 damage per level</p>
+                            <p class="stat-info">• +5% fire rate per level</p>
+                        </div>
+                    </div>
+                    <div class="weapon-card">
+                        <h2>PLASMA</h2>
+                        <div class="weapon-stats">
+                            <p><strong>Type:</strong> Balanced</p>
+                            <p><strong>Base Fire Rate:</strong> 400ms</p>
+                            <p><strong>Base Damage:</strong> 15</p>
+                            <p><strong>Base Speed:</strong> 8</p>
+                            <p><strong>Levels:</strong> 1-9</p>
+                            <p class="stat-info">• +2 damage per level</p>
+                            <p class="stat-info">• +5% fire rate per level</p>
+                        </div>
+                    </div>
+                    <div class="weapon-card">
+                        <h2>RAILGUN</h2>
+                        <div class="weapon-stats">
+                            <p><strong>Type:</strong> Rapid fire</p>
+                            <p><strong>Base Speed:</strong> 15</p>
+                            <p><strong>Levels:</strong> 1-9 (Complex system)</p>
+                            <p class="stat-info">• L1: 200ms, 2 dmg, 1 bullet</p>
+                            <p class="stat-info">• L2: 160ms, 2 dmg, 1 bullet</p>
+                            <p class="stat-info">• L3: 120ms, 2 dmg, 1 bullet</p>
+                            <p class="stat-info">• L4: 160ms, 4 dmg, 1 bullet</p>
+                            <p class="stat-info">• L5: 160ms, 2 dmg, 2 bullets</p>
+                            <p class="stat-info">• L6: 120ms, 2 dmg, 2 bullets</p>
+                            <p class="stat-info">• L7: 160ms, 4 dmg, 2 bullets</p>
+                            <p class="stat-info">• L8: 120ms, 4 dmg, 2 bullets</p>
+                            <p class="stat-info">• L9: 120ms, 6 dmg, 2 bullets</p>
+                        </div>
+                    </div>
+                    <div class="weapon-card">
+                        <h2>BLASTER</h2>
+                        <div class="weapon-stats">
+                            <p><strong>Type:</strong> Spread shot</p>
+                            <p><strong>Base Fire Rate:</strong> 600ms</p>
+                            <p><strong>Base Damage:</strong> 8 per pellet</p>
+                            <p><strong>Base Speed:</strong> 6</p>
+                            <p><strong>Pellets:</strong> 5</p>
+                            <p><strong>Levels:</strong> 1-9</p>
+                            <p class="stat-info">• +1 damage per level</p>
+                            <p class="stat-info">• +5% fire rate per level</p>
+                        </div>
+                    </div>
+                </div>
+                <button id="weapons-back-button" class="game-button">BACK TO MENU</button>
+            </div>
         </div>
     </div>
 

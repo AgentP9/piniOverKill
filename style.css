@@ -142,6 +142,12 @@ body {
     color: #0a0;
 }
 
+.menu-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
 .godmode-toggle {
     margin: 15px 0;
     padding: 10px 20px;
@@ -355,6 +361,60 @@ body {
     text-shadow: 0 0 3px #0f0;
 }
 
+#weapons-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.weapons-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    width: 100%;
+    max-width: 900px;
+    margin: 20px 0;
+}
+
+.weapon-card {
+    background: rgba(0, 17, 0, 0.95);
+    border: 2px solid #0a0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.weapon-card h2 {
+    font-size: 1.3em;
+    color: #0f0;
+    text-align: center;
+    border-bottom: 1px solid #0a0;
+    padding-bottom: 8px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 5px #0f0;
+}
+
+.weapon-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.weapon-stats p {
+    color: #0c0;
+    font-size: 0.85em;
+    margin: 0;
+}
+
+.weapon-stats .stat-info {
+    color: #0a0;
+    font-size: 0.8em;
+    padding-left: 10px;
+}
+
 @media (max-width: 850px) {
     :root {
         --border-width: 0px;
@@ -394,5 +454,22 @@ body {
     .info-box p,
     .info-box-wide p {
         font-size: 0.8em;
+    }
+    
+    .weapons-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .weapon-card {
+        padding: 10px;
+    }
+    
+    .weapon-card h2 {
+        font-size: 1.1em;
+    }
+    
+    .weapon-stats p {
+        font-size: 0.75em;
     }
 }
