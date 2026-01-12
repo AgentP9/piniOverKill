@@ -416,6 +416,50 @@ const ctx = canvas.getContext('2d');
 canvas.width = CONFIG.canvas.width;
 canvas.height = CONFIG.canvas.height;
 
+// Utility function to darken a hex color
+function darkenColor(color, amount) {
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Parse RGB components
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Darken each component
+    const newR = Math.max(0, r - amount);
+    const newG = Math.max(0, g - amount);
+    const newB = Math.max(0, b - amount);
+    
+    // Convert back to hex
+    return '#' + 
+        newR.toString(16).padStart(2, '0') +
+        newG.toString(16).padStart(2, '0') +
+        newB.toString(16).padStart(2, '0');
+}
+
+// Utility function to lighten a hex color
+function lightenColor(color, amount) {
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Parse RGB components
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Lighten each component
+    const newR = Math.min(255, r + amount);
+    const newG = Math.min(255, g + amount);
+    const newB = Math.min(255, b + amount);
+    
+    // Convert back to hex
+    return '#' + 
+        newR.toString(16).padStart(2, '0') +
+        newG.toString(16).padStart(2, '0') +
+        newB.toString(16).padStart(2, '0');
+}
+
 // Menu Canvas Setup
 const menuCanvas = document.getElementById('menu-canvas');
 const menuCtx = menuCanvas.getContext('2d');
@@ -994,71 +1038,153 @@ class Enemy {
 
     draw() {
         const now = Date.now();
+        const centerX = this.x + this.width / 2;
         
         // Animated engine flame effect (enemies fly downward, so flame at top/back)
         const flamePulse = Math.sin(now / 40) * 0.5 + 0.5; // Faster pulse for enemies
         const flameFlicker = Math.random() * 0.3 + 0.7;
         
-        // Scale flame size based on ship size (smaller ships = smaller flames)
+        // Scale flame size based on ship size
         const flameScale = this.width / 30; // 30 is standard width
         const baseFlameHeight = (4 + flamePulse * 3) * flameFlicker * flameScale;
-        
-        // Draw flame at the back (top) of the enemy ship
-        const centerX = this.x + this.width / 2;
         const flameY = this.y; // Top of the ship
         
-        // Single center flame for enemies (they're smaller than player)
-        // Outer flame (reddish/orange - enemy theme)
-        ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
-        ctx.beginPath();
-        ctx.moveTo(centerX, flameY);
-        ctx.lineTo(centerX - 2 * flameScale, flameY - baseFlameHeight * 0.6);
-        ctx.lineTo(centerX, flameY - baseFlameHeight);
-        ctx.lineTo(centerX + 2 * flameScale, flameY - baseFlameHeight * 0.6);
-        ctx.closePath();
-        ctx.fill();
+        // Draw engine flames (multiple for larger ships)
+        const numEngines = this.type === 'battleship' ? 3 : (this.type === 'cruiser' || this.type === 'heavy' ? 2 : 1);
+        for (let e = 0; e < numEngines; e++) {
+            const engineX = numEngines === 1 ? centerX : (centerX - this.width * 0.25 + (e * this.width * 0.5));
+            
+            // Outer flame (reddish/orange - enemy theme)
+            ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, flameY);
+            ctx.lineTo(engineX - 2 * flameScale, flameY - baseFlameHeight * 0.6);
+            ctx.lineTo(engineX, flameY - baseFlameHeight);
+            ctx.lineTo(engineX + 2 * flameScale, flameY - baseFlameHeight * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Inner flame
+            ctx.fillStyle = `rgba(255, 200, 0, ${0.8 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, flameY);
+            ctx.lineTo(engineX - 1 * flameScale, flameY - baseFlameHeight * 0.7);
+            ctx.lineTo(engineX, flameY - baseFlameHeight * 0.85);
+            ctx.lineTo(engineX + 1 * flameScale, flameY - baseFlameHeight * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Core
+            ctx.fillStyle = `rgba(255, 255, 100, ${0.9 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, flameY);
+            ctx.lineTo(engineX - 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
+            ctx.lineTo(engineX, flameY - baseFlameHeight * 0.5);
+            ctx.lineTo(engineX + 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
+            ctx.closePath();
+            ctx.fill();
+        }
         
-        // Inner flame (bright orange/yellow)
-        ctx.fillStyle = `rgba(255, 200, 0, ${0.8 * flameFlicker})`;
-        ctx.beginPath();
-        ctx.moveTo(centerX, flameY);
-        ctx.lineTo(centerX - 1 * flameScale, flameY - baseFlameHeight * 0.7);
-        ctx.lineTo(centerX, flameY - baseFlameHeight * 0.85);
-        ctx.lineTo(centerX + 1 * flameScale, flameY - baseFlameHeight * 0.7);
-        ctx.closePath();
-        ctx.fill();
+        // Draw wings/side panels for larger ships
+        if (this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
+            const wingWidth = this.width * 0.15;
+            const wingHeight = this.height * 0.6;
+            const darkerColor = darkenColor(this.color, 40);
+            
+            // Left wing
+            ctx.fillStyle = darkerColor;
+            ctx.fillRect(this.x - wingWidth * 0.5, this.y + this.height * 0.2, wingWidth, wingHeight);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x - wingWidth * 0.3, this.y + this.height * 0.25, wingWidth * 0.6, wingHeight * 0.8);
+            
+            // Right wing
+            ctx.fillStyle = darkerColor;
+            ctx.fillRect(this.x + this.width - wingWidth * 0.5, this.y + this.height * 0.2, wingWidth, wingHeight);
+            ctx.fillStyle = this.color;
+            ctx.fillRect(this.x + this.width - wingWidth * 0.3, this.y + this.height * 0.25, wingWidth * 0.6, wingHeight * 0.8);
+        }
         
-        // Core (bright white/yellow hot core)
-        ctx.fillStyle = `rgba(255, 255, 100, ${0.9 * flameFlicker})`;
-        ctx.beginPath();
-        ctx.moveTo(centerX, flameY);
-        ctx.lineTo(centerX - 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
-        ctx.lineTo(centerX, flameY - baseFlameHeight * 0.5);
-        ctx.lineTo(centerX + 0.5 * flameScale, flameY - baseFlameHeight * 0.4);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Draw enemy ship
+        // Draw main ship body with enhanced detail
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y + this.height);
+        ctx.moveTo(centerX, this.y + this.height);
         ctx.lineTo(this.x, this.y);
-        ctx.lineTo(this.x + this.width / 2, this.y + this.height * 0.2);
+        ctx.lineTo(centerX, this.y + this.height * 0.2);
         ctx.lineTo(this.x + this.width, this.y);
         ctx.closePath();
         ctx.fill();
         
-        // Draw turrets for cruiser and battleship
-        if (this.hasTurrets) {
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x + this.width * 0.25 - 3, this.y + this.height / 2 - 3, 6, 6);
-            ctx.fillRect(this.x + this.width * 0.75 - 3, this.y + this.height / 2 - 3, 6, 6);
+        // Add body outline for definition
+        ctx.strokeStyle = lightenColor(this.color, 40);
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw cockpit/bridge based on ship type
+        const cockpitSize = this.type === 'small' ? 3 : (this.type === 'standard' || this.type === 'advanced' ? 4 : 6);
+        const cockpitY = this.y + this.height * 0.35;
+        
+        // Cockpit window
+        ctx.fillStyle = '#003366';
+        ctx.fillRect(centerX - cockpitSize, cockpitY, cockpitSize * 2, cockpitSize);
+        ctx.fillStyle = '#0066cc';
+        ctx.fillRect(centerX - cockpitSize + 1, cockpitY + 1, cockpitSize * 2 - 2, cockpitSize - 2);
+        
+        // Cockpit highlight
+        ctx.fillStyle = '#00aaff';
+        ctx.fillRect(centerX - cockpitSize + 1, cockpitY + 1, cockpitSize - 1, 1);
+        
+        // Draw weapon hardpoints for advanced types
+        if (this.type === 'advanced' || this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
+            ctx.fillStyle = '#880000';
+            const weaponY = this.y + this.height * 0.6;
+            ctx.fillRect(centerX - this.width * 0.3, weaponY, 3, 4);
+            ctx.fillRect(centerX + this.width * 0.3 - 3, weaponY, 3, 4);
         }
         
-        // Draw larger ship details for bigger enemies
+        // Draw turrets for cruiser and battleship with enhanced design
+        if (this.hasTurrets) {
+            const turretSize = this.type === 'battleship' ? 8 : 6;
+            const leftTurretX = this.x + this.width * 0.25;
+            const rightTurretX = this.x + this.width * 0.75;
+            const turretY = this.y + this.height / 2;
+            
+            // Left turret
+            ctx.fillStyle = '#660000';
+            ctx.fillRect(leftTurretX - turretSize/2 - 1, turretY - turretSize/2 - 1, turretSize + 2, turretSize + 2);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(leftTurretX - turretSize/2, turretY - turretSize/2, turretSize, turretSize);
+            ctx.fillStyle = '#ff6666';
+            ctx.fillRect(leftTurretX - turretSize/2 + 1, turretY - turretSize/2 + 1, turretSize - 2, turretSize - 2);
+            
+            // Right turret
+            ctx.fillStyle = '#660000';
+            ctx.fillRect(rightTurretX - turretSize/2 - 1, turretY - turretSize/2 - 1, turretSize + 2, turretSize + 2);
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(rightTurretX - turretSize/2, turretY - turretSize/2, turretSize, turretSize);
+            ctx.fillStyle = '#ff6666';
+            ctx.fillRect(rightTurretX - turretSize/2 + 1, turretY - turretSize/2 + 1, turretSize - 2, turretSize - 2);
+        }
+        
+        // Add armor plating details for larger ships
         if (this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(this.x + this.width / 2 - 2, this.y + this.height * 0.3, 4, 4);
+            const plateColor = darkenColor(this.color, 30);
+            ctx.fillStyle = plateColor;
+            
+            // Horizontal armor plates
+            ctx.fillRect(centerX - this.width * 0.35, this.y + this.height * 0.15, this.width * 0.7, 2);
+            ctx.fillRect(centerX - this.width * 0.3, this.y + this.height * 0.5, this.width * 0.6, 2);
+            
+            // Vertical armor plates
+            ctx.fillRect(centerX - this.width * 0.15, this.y + this.height * 0.2, 2, this.height * 0.4);
+            ctx.fillRect(centerX + this.width * 0.15 - 2, this.y + this.height * 0.2, 2, this.height * 0.4);
+        }
+        
+        // Status lights (pulsing red for danger)
+        if (this.type !== 'small') {
+            const lightPulse = Math.sin(now / 200) * 0.5 + 0.5;
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.5 + lightPulse * 0.5})`;
+            const lightY = this.y + this.height * 0.15;
+            ctx.fillRect(centerX - 1, lightY, 2, 2);
         }
 
         // Draw health bar
@@ -1292,42 +1418,239 @@ class Boss {
     }
 
     draw() {
-        // Draw boss ship body (larger and more imposing)
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x + 15, this.y, this.width - 30, this.height);
+        const now = Date.now();
+        const centerX = this.x + this.width / 2;
+        const centerY = this.y + this.height / 2;
+        
+        // Draw animated engine arrays (multiple engines for massive ship)
+        const flamePulse = Math.sin(now / 50) * 0.5 + 0.5;
+        const flameFlicker = Math.random() * 0.3 + 0.7;
+        const numEngines = 5;
+        
+        for (let e = 0; e < numEngines; e++) {
+            const engineX = this.x + (this.width / (numEngines + 1)) * (e + 1);
+            const engineSize = 3 + (e === 2 ? 2 : 0); // Center engine larger
+            const flameHeight = (6 + flamePulse * 4) * flameFlicker;
+            
+            // Engine glow
+            ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, this.y);
+            ctx.lineTo(engineX - engineSize, this.y - flameHeight * 0.6);
+            ctx.lineTo(engineX, this.y - flameHeight);
+            ctx.lineTo(engineX + engineSize, this.y - flameHeight * 0.6);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillStyle = `rgba(255, 200, 0, ${0.8 * flameFlicker})`;
+            ctx.beginPath();
+            ctx.moveTo(engineX, this.y);
+            ctx.lineTo(engineX - engineSize * 0.6, this.y - flameHeight * 0.7);
+            ctx.lineTo(engineX, this.y - flameHeight * 0.85);
+            ctx.lineTo(engineX + engineSize * 0.6, this.y - flameHeight * 0.7);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Draw outer hull armor (darker shade)
+        const armorColor = darkenColor(this.color, 50);
+        
+        // Main hull structure
+        ctx.fillStyle = armorColor;
+        ctx.fillRect(this.x + 10, this.y, this.width - 20, this.height);
         ctx.beginPath();
-        ctx.moveTo(this.x + this.width / 2, this.y + this.height);
-        ctx.lineTo(this.x, this.y + this.height / 2);
-        ctx.lineTo(this.x + 15, this.y);
-        ctx.lineTo(this.x + this.width - 15, this.y);
-        ctx.lineTo(this.x + this.width, this.y + this.height / 2);
+        ctx.moveTo(centerX, this.y + this.height);
+        ctx.lineTo(this.x, centerY);
+        ctx.lineTo(this.x + 10, this.y);
+        ctx.lineTo(this.x + this.width - 10, this.y);
+        ctx.lineTo(this.x + this.width, centerY);
         ctx.closePath();
         ctx.fill();
-
-        // Draw boss details
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(this.x + 20, this.y + 25, 12, 12);
-        ctx.fillRect(this.x + this.width - 32, this.y + 25, 12, 12);
-        ctx.fillRect(this.x + this.width / 2 - 7, this.y + 15, 14, 20);
         
-        // Draw turrets if applicable
+        // Inner hull (lighter color)
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x + 18, this.y + 8, this.width - 36, this.height - 16);
+        ctx.beginPath();
+        ctx.moveTo(centerX, this.y + this.height - 8);
+        ctx.lineTo(this.x + 8, centerY);
+        ctx.lineTo(this.x + 18, this.y + 8);
+        ctx.lineTo(this.x + this.width - 18, this.y + 8);
+        ctx.lineTo(this.x + this.width - 8, centerY);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Add armor plating lines
+        const plateColor = lightenColor(this.color, 30);
+        ctx.strokeStyle = plateColor;
+        ctx.lineWidth = 2;
+        
+        // Horizontal plates
+        ctx.beginPath();
+        ctx.moveTo(this.x + 15, this.y + this.height * 0.25);
+        ctx.lineTo(this.x + this.width - 15, this.y + this.height * 0.25);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(this.x + 15, this.y + this.height * 0.5);
+        ctx.lineTo(this.x + this.width - 15, this.y + this.height * 0.5);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(this.x + 15, this.y + this.height * 0.75);
+        ctx.lineTo(this.x + this.width - 15, this.y + this.height * 0.75);
+        ctx.stroke();
+        
+        // Vertical plates
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width * 0.25, this.y + 10);
+        ctx.lineTo(this.x + this.width * 0.25, this.y + this.height - 10);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(this.x + this.width * 0.75, this.y + 10);
+        ctx.lineTo(this.x + this.width * 0.75, this.y + this.height - 10);
+        ctx.stroke();
+        
+        // Draw command bridge (elevated center structure)
+        const bridgeWidth = this.width * 0.3;
+        const bridgeHeight = this.height * 0.4;
+        const bridgeX = centerX - bridgeWidth / 2;
+        const bridgeY = this.y + this.height * 0.15;
+        
+        ctx.fillStyle = '#660000';
+        ctx.fillRect(bridgeX - 2, bridgeY - 2, bridgeWidth + 4, bridgeHeight + 4);
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(bridgeX, bridgeY, bridgeWidth, bridgeHeight);
+        ctx.fillStyle = '#ff6666';
+        ctx.fillRect(bridgeX + 2, bridgeY + 2, bridgeWidth - 4, bridgeHeight - 4);
+        
+        // Bridge windows
+        ctx.fillStyle = '#003366';
+        const windowWidth = bridgeWidth * 0.8;
+        const windowHeight = 8;
+        ctx.fillRect(centerX - windowWidth / 2, bridgeY + bridgeHeight * 0.3, windowWidth, windowHeight);
+        ctx.fillStyle = '#0099ff';
+        ctx.fillRect(centerX - windowWidth / 2 + 1, bridgeY + bridgeHeight * 0.3 + 1, windowWidth - 2, windowHeight - 2);
+        
+        // Window highlights (animated)
+        const windowGlow = Math.sin(now / 300) * 0.3 + 0.7;
+        ctx.fillStyle = `rgba(0, 200, 255, ${windowGlow})`;
+        ctx.fillRect(centerX - windowWidth / 2 + 2, bridgeY + bridgeHeight * 0.3 + 2, windowWidth * 0.3, 2);
+        
+        // Draw weapon systems based on boss type
+        if (this.weapon === 'blaster') {
+            // Blaster cannons
+            const cannonY = this.y + this.height * 0.6;
+            ctx.fillStyle = '#ff8800';
+            ctx.fillRect(this.x + 15, cannonY, 8, 12);
+            ctx.fillRect(this.x + this.width - 23, cannonY, 8, 12);
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillRect(this.x + 17, cannonY + 2, 4, 8);
+            ctx.fillRect(this.x + this.width - 21, cannonY + 2, 4, 8);
+        } else if (this.weapon === 'railgun') {
+            // Railgun arrays
+            const railgunY = this.y + this.height * 0.55;
+            for (let i = 0; i < 3; i++) {
+                const railX = centerX - 12 + i * 12;
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(railX, railgunY, 4, 15);
+                ctx.fillStyle = '#ffff88';
+                ctx.fillRect(railX + 1, railgunY + 2, 2, 11);
+            }
+        } else if (this.weapon === 'plasma') {
+            // Plasma cannons
+            const plasmaY = this.y + this.height * 0.65;
+            ctx.fillStyle = '#00ffff';
+            ctx.fillRect(this.x + 20, plasmaY, 10, 10);
+            ctx.fillRect(this.x + this.width - 30, plasmaY, 10, 10);
+            ctx.fillStyle = '#88ffff';
+            ctx.fillRect(this.x + 22, plasmaY + 2, 6, 6);
+            ctx.fillRect(this.x + this.width - 28, plasmaY + 2, 6, 6);
+        }
+        
+        // Draw turrets with enhanced design
         if (this.hasTurrets) {
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(this.x + this.width * 0.25 - 5, this.y + this.height / 2 - 5, 10, 10);
-            ctx.fillRect(this.x + this.width * 0.75 - 5, this.y + this.height / 2 - 5, 10, 10);
+            const turretSize = 12;
+            const leftTurretX = this.x + this.width * 0.2;
+            const rightTurretX = this.x + this.width * 0.8;
+            const turretY = centerY;
+            
+            for (let turretX of [leftTurretX, rightTurretX]) {
+                // Turret base
+                ctx.fillStyle = '#440000';
+                ctx.beginPath();
+                ctx.arc(turretX, turretY, turretSize + 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Turret body
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(turretX, turretY, turretSize, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Turret top
+                ctx.fillStyle = '#ff6666';
+                ctx.beginPath();
+                ctx.arc(turretX, turretY, turretSize - 3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Turret barrel (pointing down toward player)
+                ctx.fillStyle = '#880000';
+                ctx.fillRect(turretX - 2, turretY + turretSize - 2, 4, 8);
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(turretX - 1, turretY + turretSize - 1, 2, 7);
+            }
+        }
+        
+        // Shield generators (pulsing energy fields)
+        const shieldPulse = Math.sin(now / 150) * 0.3 + 0.5;
+        ctx.fillStyle = `rgba(255, 0, 255, ${shieldPulse})`;
+        ctx.fillRect(this.x + this.width * 0.1, this.y + this.height * 0.2, 6, 6);
+        ctx.fillRect(this.x + this.width * 0.9 - 6, this.y + this.height * 0.2, 6, 6);
+        
+        // Status lights (animated)
+        const lightPulse = Math.sin(now / 100) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(255, 0, 0, ${0.6 + lightPulse * 0.4})`;
+        for (let i = 0; i < 4; i++) {
+            const lightX = this.x + 25 + i * 15;
+            ctx.fillRect(lightX, this.y + 10, 3, 3);
+        }
+        
+        // Drone bay indicator (if applicable)
+        if (this.deployDrones) {
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(centerX - 8, this.y + this.height - 15, 16, 10);
+            ctx.fillStyle = '#ff88ff';
+            ctx.fillRect(centerX - 6, this.y + this.height - 13, 12, 6);
         }
 
-        // Draw health bar
+        // Draw health bar with segments
+        const healthBarHeight = 8;
         ctx.fillStyle = '#330000';
-        ctx.fillRect(this.x, this.y - 12, this.width, 8);
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(this.x, this.y - 12, this.width * (this.health / this.maxHealth), 8);
+        ctx.fillRect(this.x, this.y - 15, this.width, healthBarHeight);
         
-        // Draw boss name
+        // Segmented health bar for boss
+        const healthPercent = this.health / this.maxHealth;
+        const segments = 10;
+        const segmentWidth = (this.width - segments + 1) / segments;
+        
+        for (let i = 0; i < segments; i++) {
+            if (i < healthPercent * segments) {
+                const segmentHealth = healthPercent * segments - i;
+                const alpha = segmentHealth >= 1 ? 1 : segmentHealth;
+                ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`;
+                ctx.fillRect(this.x + i * (segmentWidth + 1), this.y - 15, segmentWidth, healthBarHeight);
+            }
+        }
+        
+        // Draw boss name with glow effect
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 10;
         ctx.fillStyle = this.color;
-        ctx.font = '14px monospace';
+        ctx.font = 'bold 16px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText(this.name, this.x + this.width / 2, this.y - 15);
+        ctx.fillText(this.name, centerX, this.y - 20);
+        ctx.shadowBlur = 0;
         ctx.textAlign = 'left';
     }
 
