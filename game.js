@@ -3226,8 +3226,6 @@ function stopWeaponsAnimation() {
 }
 
 // Weapons Table Functions
-let currentStatView = 'damage'; // 'damage' or 'firerate'
-
 function populateWeaponsTable() {
     const tbody = document.getElementById('weapons-table-body');
     if (!tbody) return;
@@ -3257,57 +3255,50 @@ function populateWeaponsTable() {
             
             let cellContent = '';
             
-            if (currentStatView === 'damage') {
-                // Display damage
-                if (weaponKey === 'railgun') {
-                    const bullets = levelConfig.bullets || 1;
-                    const totalDamage = levelConfig.damage * bullets;
-                    cellContent = `${levelConfig.damage}`;
-                    if (bullets > 1) {
-                        cellContent += ` <span class="multiplier">×${bullets}</span>`;
-                    }
-                } else if (weaponKey === 'blaster') {
-                    const pellets = levelConfig.pellets;
-                    const totalDamage = levelConfig.damage * pellets;
-                    cellContent = `${levelConfig.damage} <span class="multiplier">×${pellets}</span>`;
-                    
-                    // Add wing weapon info
-                    if (levelConfig.wingWeapon) {
-                        const wingWeapon = levelConfig.wingWeapon;
-                        const wingLevel = levelConfig.wingLevel;
-                        const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
-                        const wingName = CONFIG.weapons[wingWeapon].name;
-                        const wingDamage = wingConfig.damage;
-                        
-                        // Check if wing weapon has multipliers
-                        let wingDamageText = `${wingDamage}`;
-                        if (wingWeapon === 'railgun' && wingConfig.bullets > 1) {
-                            wingDamageText += `×${wingConfig.bullets}`;
-                        }
-                        
-                        cellContent += `<span class="wing-info">(${wingName} ${wingDamageText}dmg)</span>`;
-                    }
-                } else {
-                    cellContent = `${levelConfig.damage}`;
-                }
+            // Calculate DPS (Damage Per Second)
+            // DPS = (damage × multiplier) / (fireRate / 1000)
+            const fireRateSeconds = levelConfig.fireRate / 1000;
+            let baseDPS = 0;
+            
+            if (weaponKey === 'railgun') {
+                const bullets = levelConfig.bullets || 1;
+                const totalDamagePerShot = levelConfig.damage * bullets;
+                baseDPS = totalDamagePerShot / fireRateSeconds;
+            } else if (weaponKey === 'blaster') {
+                const pellets = levelConfig.pellets;
+                const totalDamagePerShot = levelConfig.damage * pellets;
+                baseDPS = totalDamagePerShot / fireRateSeconds;
             } else {
-                // Display fire rate
-                if (weaponKey === 'blaster') {
-                    cellContent = `${levelConfig.fireRate}ms`;
-                    
-                    // Add wing weapon info
-                    if (levelConfig.wingWeapon) {
-                        const wingWeapon = levelConfig.wingWeapon;
-                        const wingLevel = levelConfig.wingLevel;
-                        const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
-                        const wingName = CONFIG.weapons[wingWeapon].name;
-                        const wingFireRate = wingConfig.fireRate;
-                        
-                        cellContent += `<span class="wing-info">(${wingName} ${wingFireRate}ms)</span>`;
-                    }
+                baseDPS = levelConfig.damage / fireRateSeconds;
+            }
+            
+            // Round to 1 decimal place
+            baseDPS = Math.round(baseDPS * 10) / 10;
+            
+            cellContent = `<span class="dps-total">${baseDPS}</span>`;
+            
+            // Add wing weapon DPS for Blaster
+            if (weaponKey === 'blaster' && levelConfig.wingWeapon) {
+                const wingWeapon = levelConfig.wingWeapon;
+                const wingLevel = levelConfig.wingLevel;
+                const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                const wingName = CONFIG.weapons[wingWeapon].name;
+                
+                // Calculate wing DPS
+                const wingFireRateSeconds = wingConfig.fireRate / 1000;
+                let wingDPS = 0;
+                
+                if (wingWeapon === 'railgun') {
+                    const wingBullets = wingConfig.bullets || 1;
+                    const wingTotalDamage = wingConfig.damage * wingBullets;
+                    wingDPS = wingTotalDamage / wingFireRateSeconds;
                 } else {
-                    cellContent = `${levelConfig.fireRate}ms`;
+                    wingDPS = wingConfig.damage / wingFireRateSeconds;
                 }
+                
+                wingDPS = Math.round(wingDPS * 10) / 10;
+                
+                cellContent += `<span class="wing-info">(${wingName} ${wingDPS})</span>`;
             }
             
             cell.innerHTML = cellContent;
@@ -3318,31 +3309,9 @@ function populateWeaponsTable() {
     });
 }
 
-function setupWeaponsTableToggle() {
-    const damageButton = document.getElementById('damage-toggle');
-    const firerateButton = document.getElementById('firerate-toggle');
-    
-    if (!damageButton || !firerateButton) return;
-    
-    damageButton.addEventListener('click', () => {
-        currentStatView = 'damage';
-        damageButton.classList.add('active');
-        firerateButton.classList.remove('active');
-        populateWeaponsTable();
-    });
-    
-    firerateButton.addEventListener('click', () => {
-        currentStatView = 'firerate';
-        firerateButton.classList.add('active');
-        damageButton.classList.remove('active');
-        populateWeaponsTable();
-    });
-}
-
 // Initialize weapons table on page load
 document.addEventListener('DOMContentLoaded', () => {
     populateWeaponsTable();
-    setupWeaponsTableToggle();
 });
 
 // Start menu animation on page load
