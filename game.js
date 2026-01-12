@@ -2130,7 +2130,9 @@ function fireBullet() {
         if (wingsLevel > 0) {
             const wingWeapon = levelConfig.wingWeapon;
             // Use current level of the wing weapon instead of hardcoded level
-            const wingWeaponLevel = gameState.weaponLevels[wingWeapon] || 1;
+            // Clamp to valid range (1-maxLevel) to prevent invalid level access
+            const currentLevel = gameState.weaponLevels[wingWeapon] || 1;
+            const wingWeaponLevel = Math.max(1, Math.min(currentLevel, CONFIG.weaponLevels.maxLevel));
             const leftWingX = player.x - 12;
             const rightWingX = player.x + player.width + 12;
             const wingY = player.y + player.height / 2;
