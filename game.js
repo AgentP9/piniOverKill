@@ -2130,7 +2130,7 @@ function fireBullet() {
         if (wingsLevel > 0) {
             const wingWeapon = levelConfig.wingWeapon;
             // Use current level of the wing weapon instead of hardcoded level
-            const wingWeaponLevel = gameState.weaponLevels[wingWeapon];
+            const wingWeaponLevel = gameState.weaponLevels[wingWeapon] || 1;
             const leftWingX = player.x - 12;
             const rightWingX = player.x + player.width + 12;
             const wingY = player.y + player.height / 2;
@@ -3341,7 +3341,8 @@ function populateWeaponsTable() {
                 // Blaster has special wing weapons that fire different weapons
                 const wingWeapon = levelConfig.wingWeapon;
                 // For DPS calculation, assume wing weapon is at same level as blaster
-                const wingLevel = level;
+                // Ensure wing level doesn't exceed max available levels (all weapons have 1-9)
+                const wingLevel = Math.min(level, CONFIG.weaponLevels.maxLevel);
                 const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
                 const wingFireRateSeconds = wingConfig.fireRate / 1000;
                 let wingDPS = 0;
