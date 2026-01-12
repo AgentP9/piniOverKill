@@ -31,7 +31,7 @@
                         <div class="info-box">
                             <h2>CONTROLS</h2>
                             <p>WASD/ARROWS - Move</p>
-                            <p>SPACE - Fire / Toggle Auto (Railgun)</p>
+                            <p>SPACE - Toggle Auto-Fire</p>
                             <p>TAB - Switch Weapon</p>
                             <p>ESC - Pause</p>
                         </div>
@@ -81,7 +81,12 @@
                 </div>
                 <div class="hud-item">
                     <span class="hud-label">WEAPON</span>
-                    <span id="weapon-name">PLASMA</span>
+                    <div id="weapons-list">
+                        <div class="weapon-level" id="weapon-laser">Laser: <span>L1</span></div>
+                        <div class="weapon-level" id="weapon-plasma">Plasma: <span>L1</span></div>
+                        <div class="weapon-level" id="weapon-railgun">Railgun: <span>L1</span></div>
+                        <div class="weapon-level" id="weapon-blaster">Blaster: <span>L1</span></div>
+                    </div>
                 </div>
                 <div class="hud-item">
                     <span class="hud-label">ADDONS</span>
