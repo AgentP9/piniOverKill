@@ -64,13 +64,13 @@
                     <span class="hud-label">HEALTH</span>
                     <div class="health-container">
                         <div class="health-bar-wrapper">
-                            <span class="health-bar-label">Shield</span>
+                            <span class="health-bar-label">Shield <span id="shield-value">100/100</span></span>
                             <div id="shield-bar">
                                 <div id="shield-fill"></div>
                             </div>
                         </div>
                         <div class="health-bar-wrapper">
-                            <span class="health-bar-label">Structure</span>
+                            <span class="health-bar-label">Structure <span id="structure-value">100/100</span></span>
                             <div id="structure-bar">
                                 <div id="structure-fill"></div>
                             </div>
@@ -84,6 +84,10 @@
                         <div class="weapon-level" id="weapon-plasma">Plasma: <span>L1</span></div>
                         <div class="weapon-level" id="weapon-railgun">Railgun: <span>L1</span></div>
                         <div class="weapon-level" id="weapon-blaster">Blaster: <span>L1</span></div>
+                    </div>
+                    <div id="weapon-stats">
+                        <div class="weapon-stat">DPS: <span id="weapon-dps">0</span></div>
+                        <div class="weapon-stat" id="autofire-status">Auto-Fire: <span>OFF</span></div>
                     </div>
                 </div>
                 <div class="hud-item">

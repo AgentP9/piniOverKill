@@ -407,7 +407,9 @@ const gameState = {
     kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
     lastDroneSpawn: 0,
     enemyDrones: [], // Array of enemy-deployed drones
-    stars: [] // Array of star objects for parallax starfield
+    stars: [], // Array of star objects for parallax starfield
+    cachedDPS: 0, // Cache current weapon DPS to avoid recalculation
+    lastWeaponConfig: null // Track last weapon configuration for cache invalidation
 };
 
 // Canvas Setup
@@ -3174,11 +3176,13 @@ function checkCollisions() {
                     gameState.score += drone.points;
                 }
                 
-                updateHUD();
                 break;
             }
         }
     }
+    
+    // Update HUD once at the end to avoid multiple updates per frame
+    updateHUD();
 }
 
 function updateHUD() {
@@ -3191,10 +3195,104 @@ function updateHUD() {
         
         const structurePercent = (gameState.player.structure / gameState.player.maxStructure) * 100;
         document.getElementById('structure-fill').style.width = structurePercent + '%';
+        
+        // Update numeric health values
+        const shieldValue = document.getElementById('shield-value');
+        if (shieldValue) {
+            shieldValue.textContent = `${Math.ceil(gameState.player.shield)}/${gameState.player.maxShield}`;
+        }
+        
+        const structureValue = document.getElementById('structure-value');
+        if (structureValue) {
+            structureValue.textContent = `${Math.ceil(gameState.player.structure)}/${gameState.player.maxStructure}`;
+        }
     }
     
     // Update addon status display
     updateAddonStatus();
+    
+    // Update weapon stats
+    updateWeaponStats();
+}
+
+function updateWeaponStats() {
+    const currentWeapon = gameState.currentWeapon;
+    const level = gameState.weaponLevels[currentWeapon];
+    const wingsLevel = gameState.shipUpgrades.wingsLevel;
+    
+    // Create cache key based on weapon configuration
+    const configKey = `${currentWeapon}-${level}-${wingsLevel}`;
+    
+    // Check if we need to recalculate DPS
+    let dps;
+    if (gameState.lastWeaponConfig === configKey) {
+        // Use cached DPS
+        dps = gameState.cachedDPS;
+    } else {
+        // Calculate DPS
+        const levelConfig = CONFIG.weaponLevels[currentWeapon].levels[level];
+        const fireRateSeconds = levelConfig.fireRate / 1000;
+        
+        if (currentWeapon === 'railgun') {
+            const bullets = levelConfig.bullets || 1;
+            const totalDamagePerShot = levelConfig.damage * bullets;
+            dps = totalDamagePerShot / fireRateSeconds;
+        } else if (currentWeapon === 'blaster') {
+            const pellets = levelConfig.pellets;
+            const totalDamagePerShot = levelConfig.damage * pellets;
+            dps = totalDamagePerShot / fireRateSeconds;
+        } else {
+            dps = levelConfig.damage / fireRateSeconds;
+        }
+        
+        // Account for wings addon
+        if (wingsLevel > 0) {
+            if (currentWeapon === 'blaster' && levelConfig.wingWeapon) {
+                // Blaster has special wing weapons
+                const wingWeapon = levelConfig.wingWeapon;
+                const wingLevel = Math.min(level, CONFIG.weaponLevels.maxLevel);
+                const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                const wingFireRateSeconds = wingConfig.fireRate / 1000;
+                let wingDPS = 0;
+                
+                if (wingWeapon === 'railgun') {
+                    const wingBullets = wingConfig.bullets || 1;
+                    const wingTotalDamage = wingConfig.damage * wingBullets;
+                    wingDPS = wingTotalDamage / wingFireRateSeconds;
+                } else {
+                    wingDPS = wingConfig.damage / wingFireRateSeconds;
+                }
+                
+                dps = dps + (wingDPS * 2);
+            } else {
+                // Other weapons fire the same weapon from wings
+                dps = dps * 3;
+            }
+        }
+        
+        // Cache the result
+        gameState.cachedDPS = dps;
+        gameState.lastWeaponConfig = configKey;
+    }
+    
+    const dpsElement = document.getElementById('weapon-dps');
+    if (dpsElement) {
+        dpsElement.textContent = dps.toFixed(1);
+    }
+    
+    // Update auto-fire status
+    const autoFireElement = document.getElementById('autofire-status');
+    if (autoFireElement) {
+        const statusSpan = autoFireElement.querySelector('span');
+        if (statusSpan) {
+            statusSpan.textContent = gameState.autoFire ? 'ON' : 'OFF';
+        }
+        if (gameState.autoFire) {
+            autoFireElement.classList.add('active');
+        } else {
+            autoFireElement.classList.remove('active');
+        }
+    }
 }
 
 function updateAddonStatus() {
@@ -3619,6 +3717,8 @@ function stopWeaponsAnimation() {
 
 // Weapons Table Functions
 let currentShipView = 'noWings'; // 'noWings' or 'withWings'
+let currentSortColumn = null; // null, 'name', or level number (1-9)
+let currentSortDirection = 'asc'; // 'asc' or 'desc'
 
 function populateWeaponsTable() {
     const tbody = document.getElementById('weapons-table-body');
@@ -3705,8 +3805,31 @@ function populateWeaponsTable() {
         maxDPSPerLevel[level] = Math.max(...dpsPerLevel[level]);
     }
     
+    // Sort weapons if a sort column is selected
+    const sortedWeapons = [...weapons];
+    if (currentSortColumn !== null) {
+        sortedWeapons.sort((a, b) => {
+            let aValue, bValue;
+            
+            if (currentSortColumn === 'name') {
+                aValue = CONFIG.weapons[a].name;
+                bValue = CONFIG.weapons[b].name;
+            } else {
+                // Sort by level DPS
+                aValue = weaponDPSData[a][currentSortColumn][currentShipView];
+                bValue = weaponDPSData[b][currentSortColumn][currentShipView];
+            }
+            
+            let comparison = 0;
+            if (aValue < bValue) comparison = -1;
+            if (aValue > bValue) comparison = 1;
+            
+            return currentSortDirection === 'asc' ? comparison : -comparison;
+        });
+    }
+    
     // Second pass: Create table rows with highlighting
-    weapons.forEach(weaponKey => {
+    sortedWeapons.forEach(weaponKey => {
         const weaponConfig = CONFIG.weaponLevels[weaponKey];
         const weaponName = CONFIG.weapons[weaponKey].name;
         
@@ -3736,6 +3859,61 @@ function populateWeaponsTable() {
         
         tbody.appendChild(row);
     });
+    
+    // Update sort indicators in header
+    updateSortIndicators();
+}
+
+function updateSortIndicators() {
+    const table = document.getElementById('weapons-table');
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('thead tr:last-child th');
+    headers.forEach((header, index) => {
+        // Remove existing sort indicators
+        header.classList.remove('sort-asc', 'sort-desc', 'sortable');
+        
+        // Make all headers sortable
+        header.classList.add('sortable');
+        
+        // Add sort indicator if this is the current sort column
+        if (index === 0 && currentSortColumn === 'name') {
+            header.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        } else if (index > 0 && currentSortColumn === index) {
+            header.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+    });
+}
+
+function sortTable(column) {
+    if (currentSortColumn === column) {
+        // Toggle direction if clicking the same column
+        currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        // New column, default to ascending
+        currentSortColumn = column;
+        currentSortDirection = 'asc';
+    }
+    populateWeaponsTable();
+}
+
+function setupTableSorting() {
+    const table = document.getElementById('weapons-table');
+    if (!table) return;
+    
+    const headers = table.querySelectorAll('thead tr:last-child th');
+    headers.forEach((header, index) => {
+        header.style.cursor = 'pointer';
+        header.addEventListener('click', () => {
+            if (index === 0) {
+                // Name column
+                sortTable('name');
+            } else {
+                // Level columns (1-9)
+                sortTable(index);
+            }
+        });
+    });
 }
 
 function setupShipViewToggle() {
@@ -3763,6 +3941,7 @@ function setupShipViewToggle() {
 document.addEventListener('DOMContentLoaded', () => {
     populateWeaponsTable();
     setupShipViewToggle();
+    setupTableSorting();
 });
 
 // Start menu animation on page load
