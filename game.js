@@ -343,9 +343,15 @@ const CONFIG = {
         completionDelay: 3000
     },
     stars: {
-        count: 50,
-        seedX: 37,
-        seedY: 73
+        count: 100,
+        // Define multiple speed layers to simulate distance/depth
+        speedLayers: [
+            { speed: 0.3, opacity: 0.3, size: 1 },  // Far stars - slow, dim, small
+            { speed: 0.6, opacity: 0.6, size: 1 },  // Mid-far stars
+            { speed: 1.0, opacity: 0.8, size: 2 },  // Mid stars
+            { speed: 1.5, opacity: 0.9, size: 2 },  // Mid-near stars
+            { speed: 2.0, opacity: 1.0, size: 3 }   // Near stars - fast, bright, large
+        ]
     }
 };
 
@@ -400,7 +406,8 @@ const gameState = {
     kamikazeDroneActive: false,
     kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
     lastDroneSpawn: 0,
-    enemyDrones: [] // Array of enemy-deployed drones
+    enemyDrones: [], // Array of enemy-deployed drones
+    stars: [] // Array of star objects for parallax starfield
 };
 
 // Canvas Setup
@@ -424,14 +431,49 @@ weaponsCanvas.height = CONFIG.canvas.height;
 // Menu starfield state
 const menuStarfield = {
     scrollOffset: 0,
-    animationId: null
+    animationId: null,
+    stars: []
 };
 
 // Weapons starfield state
 const weaponsStarfield = {
     scrollOffset: 0,
-    animationId: null
+    animationId: null,
+    stars: []
 };
+
+// Initialize starfield with random star positions
+function initializeStarfield() {
+    const stars = [];
+    for (let i = 0; i < CONFIG.stars.count; i++) {
+        // Assign to a layer using round-robin for even distribution
+        const layerIndex = i % CONFIG.stars.speedLayers.length;
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        
+        stars.push({
+            x: Math.random() * CONFIG.canvas.width,
+            y: Math.random() * CONFIG.canvas.height,
+            layerIndex: layerIndex,
+            size: layer.size,
+            opacity: layer.opacity,
+            speed: layer.speed
+        });
+    }
+    return stars;
+}
+
+// Update star position and handle wrapping
+function updateStar(star) {
+    // Update star position based on its speed
+    star.y += star.speed;
+    
+    // Wrap around when star goes off screen
+    if (star.y > CONFIG.canvas.height) {
+        star.y = 0;
+        // Randomize x position when wrapping for more natural feel
+        star.x = Math.random() * CONFIG.canvas.width;
+    }
+}
 
 // Screen Management
 const screens = {
@@ -2890,19 +2932,27 @@ function updateAddonStatus() {
 }
 
 function drawBackground() {
-    // Scrolling starfield
-    gameState.scrollOffset = (gameState.scrollOffset + 1) % 600;
-    
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
     
-    // Draw stars
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < CONFIG.stars.count; i++) {
-        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + gameState.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        ctx.fillRect(x, y, size, size);
+    // Initialize stars if not yet done
+    if (!gameState.stars || gameState.stars.length === 0) {
+        gameState.stars = initializeStarfield();
+    }
+    
+    // Update and draw stars grouped by layer to minimize fillStyle changes
+    for (let layerIndex = 0; layerIndex < CONFIG.stars.speedLayers.length; layerIndex++) {
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        ctx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        
+        // Update and draw all stars in this layer
+        for (let i = 0; i < gameState.stars.length; i++) {
+            const star = gameState.stars[i];
+            if (star.layerIndex !== layerIndex) continue;
+            
+            updateStar(star);
+            ctx.fillRect(star.x, star.y, star.size, star.size);
+        }
     }
 }
 
@@ -3157,16 +3207,24 @@ function drawMenuStarfield() {
     menuCtx.fillStyle = '#000000';
     menuCtx.fillRect(0, 0, menuCanvas.width, menuCanvas.height);
     
-    // Scrolling starfield
-    menuStarfield.scrollOffset = (menuStarfield.scrollOffset + 1) % 600;
+    // Initialize stars if not yet done
+    if (!menuStarfield.stars || menuStarfield.stars.length === 0) {
+        menuStarfield.stars = initializeStarfield();
+    }
     
-    // Draw stars
-    menuCtx.fillStyle = '#ffffff';
-    for (let i = 0; i < CONFIG.stars.count; i++) {
-        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + menuStarfield.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        menuCtx.fillRect(x, y, size, size);
+    // Update and draw stars grouped by layer to minimize fillStyle changes
+    for (let layerIndex = 0; layerIndex < CONFIG.stars.speedLayers.length; layerIndex++) {
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        menuCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        
+        // Update and draw all stars in this layer
+        for (let i = 0; i < menuStarfield.stars.length; i++) {
+            const star = menuStarfield.stars[i];
+            if (star.layerIndex !== layerIndex) continue;
+            
+            updateStar(star);
+            menuCtx.fillRect(star.x, star.y, star.size, star.size);
+        }
     }
 }
 
@@ -3194,16 +3252,24 @@ function drawWeaponsStarfield() {
     weaponsCtx.fillStyle = '#000000';
     weaponsCtx.fillRect(0, 0, weaponsCanvas.width, weaponsCanvas.height);
     
-    // Scrolling starfield
-    weaponsStarfield.scrollOffset = (weaponsStarfield.scrollOffset + 1) % 600;
+    // Initialize stars if not yet done
+    if (!weaponsStarfield.stars || weaponsStarfield.stars.length === 0) {
+        weaponsStarfield.stars = initializeStarfield();
+    }
     
-    // Draw stars
-    weaponsCtx.fillStyle = '#ffffff';
-    for (let i = 0; i < CONFIG.stars.count; i++) {
-        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + weaponsStarfield.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        weaponsCtx.fillRect(x, y, size, size);
+    // Update and draw stars grouped by layer to minimize fillStyle changes
+    for (let layerIndex = 0; layerIndex < CONFIG.stars.speedLayers.length; layerIndex++) {
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        weaponsCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        
+        // Update and draw all stars in this layer
+        for (let i = 0; i < weaponsStarfield.stars.length; i++) {
+            const star = weaponsStarfield.stars[i];
+            if (star.layerIndex !== layerIndex) continue;
+            
+            updateStar(star);
+            weaponsCtx.fillRect(star.x, star.y, star.size, star.size);
+        }
     }
 }
 
