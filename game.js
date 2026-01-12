@@ -345,7 +345,16 @@ const CONFIG = {
     stars: {
         count: 50,
         seedX: 37,
-        seedY: 73
+        seedY: 73,
+        // Define multiple speed layers to simulate distance/depth
+        // Each star will be assigned to a layer based on its index
+        speedLayers: [
+            { speed: 0.3, opacity: 0.3, size: 1 },  // Far stars - slow, dim, small
+            { speed: 0.6, opacity: 0.6, size: 1 },  // Mid-far stars
+            { speed: 1.0, opacity: 0.8, size: 2 },  // Mid stars
+            { speed: 1.5, opacity: 0.9, size: 2 },  // Mid-near stars
+            { speed: 2.0, opacity: 1.0, size: 3 }   // Near stars - fast, bright, large
+        ]
     }
 };
 
@@ -2890,19 +2899,25 @@ function updateAddonStatus() {
 }
 
 function drawBackground() {
-    // Scrolling starfield
+    // Scrolling starfield - increment base offset
     gameState.scrollOffset = (gameState.scrollOffset + 1) % 600;
     
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, CONFIG.canvas.width, CONFIG.canvas.height);
     
-    // Draw stars
-    ctx.fillStyle = '#ffffff';
+    // Draw stars with multiple speeds to simulate depth
     for (let i = 0; i < CONFIG.stars.count; i++) {
+        // Assign each star to a speed layer based on its index
+        const layerIndex = i % CONFIG.stars.speedLayers.length;
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        
         const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + gameState.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        ctx.fillRect(x, y, size, size);
+        // Apply layer-specific speed multiplier to create depth effect
+        const y = ((i * CONFIG.stars.seedY + gameState.scrollOffset * layer.speed) % CONFIG.canvas.height);
+        
+        // Set star appearance based on layer (closer = brighter and larger)
+        ctx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        ctx.fillRect(x, y, layer.size, layer.size);
     }
 }
 
@@ -3157,16 +3172,22 @@ function drawMenuStarfield() {
     menuCtx.fillStyle = '#000000';
     menuCtx.fillRect(0, 0, menuCanvas.width, menuCanvas.height);
     
-    // Scrolling starfield
+    // Scrolling starfield - increment base offset
     menuStarfield.scrollOffset = (menuStarfield.scrollOffset + 1) % 600;
     
-    // Draw stars
-    menuCtx.fillStyle = '#ffffff';
+    // Draw stars with multiple speeds to simulate depth
     for (let i = 0; i < CONFIG.stars.count; i++) {
+        // Assign each star to a speed layer based on its index
+        const layerIndex = i % CONFIG.stars.speedLayers.length;
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        
         const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + menuStarfield.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        menuCtx.fillRect(x, y, size, size);
+        // Apply layer-specific speed multiplier to create depth effect
+        const y = ((i * CONFIG.stars.seedY + menuStarfield.scrollOffset * layer.speed) % CONFIG.canvas.height);
+        
+        // Set star appearance based on layer (closer = brighter and larger)
+        menuCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        menuCtx.fillRect(x, y, layer.size, layer.size);
     }
 }
 
@@ -3194,16 +3215,22 @@ function drawWeaponsStarfield() {
     weaponsCtx.fillStyle = '#000000';
     weaponsCtx.fillRect(0, 0, weaponsCanvas.width, weaponsCanvas.height);
     
-    // Scrolling starfield
+    // Scrolling starfield - increment base offset
     weaponsStarfield.scrollOffset = (weaponsStarfield.scrollOffset + 1) % 600;
     
-    // Draw stars
-    weaponsCtx.fillStyle = '#ffffff';
+    // Draw stars with multiple speeds to simulate depth
     for (let i = 0; i < CONFIG.stars.count; i++) {
+        // Assign each star to a speed layer based on its index
+        const layerIndex = i % CONFIG.stars.speedLayers.length;
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        
         const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
-        const y = ((i * CONFIG.stars.seedY + weaponsStarfield.scrollOffset) % CONFIG.canvas.height);
-        const size = (i % 3) + 1;
-        weaponsCtx.fillRect(x, y, size, size);
+        // Apply layer-specific speed multiplier to create depth effect
+        const y = ((i * CONFIG.stars.seedY + weaponsStarfield.scrollOffset * layer.speed) % CONFIG.canvas.height);
+        
+        // Set star appearance based on layer (closer = brighter and larger)
+        weaponsCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        weaponsCtx.fillRect(x, y, layer.size, layer.size);
     }
 }
 
