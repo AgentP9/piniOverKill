@@ -66,6 +66,20 @@ const CONFIG = {
                 9: { fireRate: 900, damage: 60, description: 'Ultra high fire, high damage' }
             }
         },
+        // Plasma level configurations
+        plasma: {
+            levels: {
+                1: { fireRate: 600, damage: 10, description: 'Low fire rate, low damage' },
+                2: { fireRate: 600, damage: 14, description: 'Low fire rate, medium damage' },
+                3: { fireRate: 500, damage: 10, description: 'Medium fire rate, low damage' },
+                4: { fireRate: 500, damage: 14, description: 'Medium fire rate, medium damage' },
+                5: { fireRate: 500, damage: 18, description: 'Medium fire rate, high damage' },
+                6: { fireRate: 420, damage: 10, description: 'High fire rate, low damage' },
+                7: { fireRate: 420, damage: 14, description: 'High fire rate, medium damage' },
+                8: { fireRate: 420, damage: 18, description: 'High fire rate, high damage' },
+                9: { fireRate: 380, damage: 18, description: 'Ultra high fire rate, high damage' }
+            }
+        },
         // Railgun level configurations
         railgun: {
             levels: {
@@ -81,7 +95,6 @@ const CONFIG = {
             }
         },
         // Other weapons use simple multiplier system
-        plasma: { damagePerLevel: 2, fireRateImprovement: 0.05 },
         blaster: { damagePerLevel: 1, fireRateImprovement: 0.05 }
     },
     enemy: {
@@ -1020,7 +1033,7 @@ class Bullet {
         this.speed = weaponConfig.speed;
         
         // Calculate damage based on weapon type and level
-        if (weapon === 'railgun' || weapon === 'laser') {
+        if (weapon === 'railgun' || weapon === 'laser' || weapon === 'plasma') {
             const weaponLevel = gameState.weaponLevels[weapon];
             const levelConfig = CONFIG.weaponLevels[weapon].levels[weaponLevel];
             this.damage = levelConfig.damage;
@@ -2032,7 +2045,7 @@ function fireBullet() {
     
     // Calculate fire rate based on weapon type and level
     let adjustedFireRate;
-    if (gameState.currentWeapon === 'railgun' || gameState.currentWeapon === 'laser') {
+    if (gameState.currentWeapon === 'railgun' || gameState.currentWeapon === 'laser' || gameState.currentWeapon === 'plasma') {
         const weaponLevel = gameState.weaponLevels[gameState.currentWeapon];
         const levelConfig = CONFIG.weaponLevels[gameState.currentWeapon].levels[weaponLevel];
         adjustedFireRate = levelConfig.fireRate;
