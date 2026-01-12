@@ -94,8 +94,20 @@ const CONFIG = {
                 9: { fireRate: 120, damage: 6, bullets: 2, description: 'Two bullets, high fire, high damage' }
             }
         },
-        // Other weapons use simple multiplier system
-        blaster: { damagePerLevel: 1, fireRateImprovement: 0.05 }
+        // Blaster level configurations
+        blaster: {
+            levels: {
+                1: { fireRate: 700, damage: 6, pellets: 5, wingWeapon: 'plasma', wingLevel: 1, description: 'Low fire, low damage' },
+                2: { fireRate: 700, damage: 8, pellets: 5, wingWeapon: 'laser', wingLevel: 2, description: 'Low fire, medium damage' },
+                3: { fireRate: 600, damage: 6, pellets: 6, wingWeapon: 'railgun', wingLevel: 3, description: 'Medium fire, low damage' },
+                4: { fireRate: 600, damage: 8, pellets: 6, wingWeapon: 'railgun', wingLevel: 4, description: 'Medium fire, medium damage' },
+                5: { fireRate: 600, damage: 10, pellets: 6, wingWeapon: 'plasma', wingLevel: 5, description: 'Medium fire, high damage' },
+                6: { fireRate: 550, damage: 6, pellets: 7, wingWeapon: 'laser', wingLevel: 5, description: 'High fire, low damage' },
+                7: { fireRate: 550, damage: 8, pellets: 7, wingWeapon: 'railgun', wingLevel: 5, description: 'High fire, medium damage' },
+                8: { fireRate: 550, damage: 10, pellets: 7, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage' },
+                9: { fireRate: 550, damage: 10, pellets: 8, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage, max pellets' }
+            }
+        }
     },
     enemy: {
         spawnRate: 2000,
@@ -1024,7 +1036,7 @@ class Enemy {
 
 // Bullet Class
 class Bullet {
-    constructor(x, y, weapon, vx = 0, vy = 0) {
+    constructor(x, y, weapon, vx = 0, vy = 0, weaponLevel = null) {
         this.x = x;
         this.y = y;
         this.width = weapon === 'laser' ? 6 : 4;
@@ -1033,15 +1045,14 @@ class Bullet {
         this.speed = weaponConfig.speed;
         
         // Calculate damage based on weapon type and level
-        if (weapon === 'railgun' || weapon === 'laser' || weapon === 'plasma') {
-            const weaponLevel = gameState.weaponLevels[weapon];
-            const levelConfig = CONFIG.weaponLevels[weapon].levels[weaponLevel];
+        if (weapon === 'railgun' || weapon === 'laser' || weapon === 'plasma' || weapon === 'blaster') {
+            // Use provided weaponLevel or fall back to gameState level
+            const effectiveLevel = weaponLevel !== null ? weaponLevel : gameState.weaponLevels[weapon];
+            const levelConfig = CONFIG.weaponLevels[weapon].levels[effectiveLevel];
             this.damage = levelConfig.damage;
         } else {
-            // Other weapons use base damage plus level-based improvements
-            const weaponLevel = gameState.weaponLevels[weapon];
-            const levelBonus = (weaponLevel - 1) * CONFIG.weaponLevels[weapon].damagePerLevel;
-            this.damage = weaponConfig.damage + levelBonus;
+            // Fallback for any other weapons (shouldn't happen with current setup)
+            this.damage = weaponConfig.damage;
         }
         
         this.color = weaponConfig.color;
@@ -2045,15 +2056,13 @@ function fireBullet() {
     
     // Calculate fire rate based on weapon type and level
     let adjustedFireRate;
-    if (gameState.currentWeapon === 'railgun' || gameState.currentWeapon === 'laser' || gameState.currentWeapon === 'plasma') {
+    if (gameState.currentWeapon === 'railgun' || gameState.currentWeapon === 'laser' || gameState.currentWeapon === 'plasma' || gameState.currentWeapon === 'blaster') {
         const weaponLevel = gameState.weaponLevels[gameState.currentWeapon];
         const levelConfig = CONFIG.weaponLevels[gameState.currentWeapon].levels[weaponLevel];
         adjustedFireRate = levelConfig.fireRate;
     } else {
-        // Other weapons use fire rate improvement per level
-        const weaponLevel = gameState.weaponLevels[gameState.currentWeapon];
-        const fireRateMultiplier = 1 + (weaponLevel - 1) * CONFIG.weaponLevels[gameState.currentWeapon].fireRateImprovement;
-        adjustedFireRate = weaponConfig.fireRate / fireRateMultiplier;
+        // Fallback for any other weapons
+        adjustedFireRate = weaponConfig.fireRate;
     }
     
     if (now - gameState.lastFire < adjustedFireRate) return;
@@ -2064,12 +2073,47 @@ function fireBullet() {
     const wingsLevel = gameState.shipUpgrades.wingsLevel;
 
     if (gameState.currentWeapon === 'blaster') {
-        // Blaster fires multiple pellets in a spread
+        // Blaster fires multiple pellets in a spread from the ship
+        const blasterLevel = gameState.weaponLevels.blaster;
+        const levelConfig = CONFIG.weaponLevels.blaster.levels[blasterLevel];
         const blasterConfig = CONFIG.weapons.blaster;
-        for (let i = 0; i < blasterConfig.pellets; i++) {
+        
+        for (let i = 0; i < levelConfig.pellets; i++) {
             const spread = (Math.random() - 0.5) * blasterConfig.spread;
             const bullet = new Bullet(centerX, player.y, gameState.currentWeapon, spread * blasterConfig.spreadMultiplier, 0);
             gameState.bullets.push(bullet);
+        }
+        
+        // Wings fire different weapons based on blaster level
+        if (wingsLevel > 0) {
+            const wingWeapon = levelConfig.wingWeapon;
+            const wingWeaponLevel = levelConfig.wingLevel;
+            const leftWingX = player.x - 12;
+            const rightWingX = player.x + player.width + 12;
+            const wingY = player.y + player.height / 2;
+            
+            // Fire wing weapons based on type
+            if (wingWeapon === 'railgun') {
+                // Railgun from wings
+                const railgunLevelConfig = CONFIG.weaponLevels.railgun.levels[wingWeaponLevel];
+                const bulletsPerShot = railgunLevelConfig.bullets;
+                const bulletSpacing = 3;
+                const getRandomYOffset = () => Math.floor(Math.random() * 3) - 1;
+                
+                if (bulletsPerShot === 1) {
+                    gameState.bullets.push(new Bullet(leftWingX, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                    gameState.bullets.push(new Bullet(rightWingX, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                } else {
+                    gameState.bullets.push(new Bullet(leftWingX - bulletSpacing, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                    gameState.bullets.push(new Bullet(leftWingX + bulletSpacing, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                    gameState.bullets.push(new Bullet(rightWingX - bulletSpacing, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                    gameState.bullets.push(new Bullet(rightWingX + bulletSpacing, wingY + getRandomYOffset(), wingWeapon, 0, 0, wingWeaponLevel));
+                }
+            } else {
+                // Laser or Plasma from wings
+                gameState.bullets.push(new Bullet(leftWingX, wingY, wingWeapon, 0, 0, wingWeaponLevel));
+                gameState.bullets.push(new Bullet(rightWingX, wingY, wingWeapon, 0, 0, wingWeaponLevel));
+            }
         }
     } else if (gameState.currentWeapon === 'railgun') {
         // Railgun has special level-based behavior
