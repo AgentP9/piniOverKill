@@ -76,8 +76,8 @@ const CONFIG = {
                 5: { fireRate: 500, damage: 18, description: 'Medium fire rate, high damage' },
                 6: { fireRate: 420, damage: 18, description: 'High fire rate, high damage' },
                 7: { fireRate: 420, damage: 20, description: 'High fire rate, high damage' },
-                8: { fireRate: 420, damage: 25, description: 'High fire rate, high damage' },
-                9: { fireRate: 380, damage: 25, description: 'Ultra high fire rate, high damage' }
+                8: { fireRate: 420, damage: 25, description: 'High fire rate, very high damage' },
+                9: { fireRate: 380, damage: 25, description: 'Ultra high fire rate, very high damage' }
             }
         },
         // Railgun level configurations
