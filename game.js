@@ -462,10 +462,16 @@ function initializeStarfield() {
     return stars;
 }
 
-// Initialize game starfield (stored in gameState)
-function initializeGameStarfield() {
-    if (!gameState.stars) {
-        gameState.stars = initializeStarfield();
+// Update star position and handle wrapping
+function updateStar(star) {
+    // Update star position based on its speed
+    star.y += star.speed;
+    
+    // Wrap around when star goes off screen
+    if (star.y > CONFIG.canvas.height) {
+        star.y = 0;
+        // Randomize x position when wrapping for more natural feel
+        star.x = Math.random() * CONFIG.canvas.width;
     }
 }
 
@@ -2944,17 +2950,7 @@ function drawBackground() {
             const star = gameState.stars[i];
             if (star.layerIndex !== layerIndex) continue;
             
-            // Update star position based on its speed
-            star.y += star.speed;
-            
-            // Wrap around when star goes off screen
-            if (star.y > CONFIG.canvas.height) {
-                star.y = 0;
-                // Randomize x position when wrapping for more natural feel
-                star.x = Math.random() * CONFIG.canvas.width;
-            }
-            
-            // Draw the star
+            updateStar(star);
             ctx.fillRect(star.x, star.y, star.size, star.size);
         }
     }
@@ -3226,17 +3222,7 @@ function drawMenuStarfield() {
             const star = menuStarfield.stars[i];
             if (star.layerIndex !== layerIndex) continue;
             
-            // Update star position based on its speed
-            star.y += star.speed;
-            
-            // Wrap around when star goes off screen
-            if (star.y > CONFIG.canvas.height) {
-                star.y = 0;
-                // Randomize x position when wrapping for more natural feel
-                star.x = Math.random() * CONFIG.canvas.width;
-            }
-            
-            // Draw the star
+            updateStar(star);
             menuCtx.fillRect(star.x, star.y, star.size, star.size);
         }
     }
@@ -3281,17 +3267,7 @@ function drawWeaponsStarfield() {
             const star = weaponsStarfield.stars[i];
             if (star.layerIndex !== layerIndex) continue;
             
-            // Update star position based on its speed
-            star.y += star.speed;
-            
-            // Wrap around when star goes off screen
-            if (star.y > CONFIG.canvas.height) {
-                star.y = 0;
-                // Randomize x position when wrapping for more natural feel
-                star.x = Math.random() * CONFIG.canvas.width;
-            }
-            
-            // Draw the star
+            updateStar(star);
             weaponsCtx.fillRect(star.x, star.y, star.size, star.size);
         }
     }
