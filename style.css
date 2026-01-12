@@ -391,6 +391,7 @@ body {
     border-collapse: collapse;
     color: #0f0;
     font-size: 0.85em;
+    table-layout: fixed;
 }
 
 .weapons-table th {
@@ -401,6 +402,10 @@ body {
     border: 1px solid #0a0;
     font-weight: bold;
     letter-spacing: 1px;
+}
+
+.weapons-table th:first-child {
+    width: 20%;
 }
 
 .weapons-table td {
@@ -427,22 +432,18 @@ body {
     font-weight: bold;
     color: #0f0;
     text-shadow: 0 0 5px #0f0;
+    width: 20%;
 }
 
 .weapons-table .stat-value {
     font-family: 'Courier New', monospace;
 }
 
-.weapons-table .dps-total {
+.weapons-table .stat-value.highest-dps {
+    background: rgba(255, 255, 0, 0.2);
     color: #ff0;
     font-weight: bold;
-}
-
-.weapons-table .wing-info {
-    color: #0aa;
-    font-size: 0.75em;
-    display: block;
-    margin-top: 2px;
+    box-shadow: inset 0 0 5px rgba(255, 255, 0, 0.3);
 }
 
 @media (max-width: 850px) {

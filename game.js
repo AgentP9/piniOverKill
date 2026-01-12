@@ -3235,6 +3235,67 @@ function populateWeaponsTable() {
     // Weapon order
     const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
     
+    // Store DPS values for each level to find max
+    const dpsPerLevel = [];
+    for (let level = 1; level <= 9; level++) {
+        dpsPerLevel[level] = [];
+    }
+    
+    // First pass: Calculate all DPS values
+    const weaponDPSData = {};
+    weapons.forEach(weaponKey => {
+        const weaponConfig = CONFIG.weaponLevels[weaponKey];
+        weaponDPSData[weaponKey] = {};
+        
+        for (let level = 1; level <= 9; level++) {
+            const levelConfig = weaponConfig.levels[level];
+            const fireRateSeconds = levelConfig.fireRate / 1000;
+            let totalDPS = 0;
+            
+            if (weaponKey === 'railgun') {
+                const bullets = levelConfig.bullets || 1;
+                const totalDamagePerShot = levelConfig.damage * bullets;
+                totalDPS = totalDamagePerShot / fireRateSeconds;
+            } else if (weaponKey === 'blaster') {
+                const pellets = levelConfig.pellets;
+                const totalDamagePerShot = levelConfig.damage * pellets;
+                totalDPS = totalDamagePerShot / fireRateSeconds;
+                
+                // Add wing weapon DPS to total for Blaster
+                if (levelConfig.wingWeapon) {
+                    const wingWeapon = levelConfig.wingWeapon;
+                    const wingLevel = levelConfig.wingLevel;
+                    const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                    const wingFireRateSeconds = wingConfig.fireRate / 1000;
+                    let wingDPS = 0;
+                    
+                    if (wingWeapon === 'railgun') {
+                        const wingBullets = wingConfig.bullets || 1;
+                        const wingTotalDamage = wingConfig.damage * wingBullets;
+                        wingDPS = wingTotalDamage / wingFireRateSeconds;
+                    } else {
+                        wingDPS = wingConfig.damage / wingFireRateSeconds;
+                    }
+                    
+                    // Add wing DPS to total (wings fire from both sides)
+                    totalDPS += wingDPS * 2;
+                }
+            } else {
+                totalDPS = levelConfig.damage / fireRateSeconds;
+            }
+            
+            weaponDPSData[weaponKey][level] = totalDPS;
+            dpsPerLevel[level].push(totalDPS);
+        }
+    });
+    
+    // Find max DPS for each level
+    const maxDPSPerLevel = {};
+    for (let level = 1; level <= 9; level++) {
+        maxDPSPerLevel[level] = Math.max(...dpsPerLevel[level]);
+    }
+    
+    // Second pass: Create table rows with highlighting
     weapons.forEach(weaponKey => {
         const weaponConfig = CONFIG.weaponLevels[weaponKey];
         const weaponName = CONFIG.weapons[weaponKey].name;
@@ -3249,59 +3310,20 @@ function populateWeaponsTable() {
         
         // Level cells (1-9)
         for (let level = 1; level <= 9; level++) {
-            const levelConfig = weaponConfig.levels[level];
             const cell = document.createElement('td');
             cell.className = 'stat-value';
             
-            let cellContent = '';
+            const dpsValue = weaponDPSData[weaponKey][level];
             
-            // Calculate DPS (Damage Per Second)
-            // DPS = (damage × multiplier) / (fireRate / 1000)
-            const fireRateSeconds = levelConfig.fireRate / 1000;
-            let baseDPS = 0;
+            // Format to always show 1 decimal place
+            const formattedDPS = dpsValue.toFixed(1);
             
-            if (weaponKey === 'railgun') {
-                const bullets = levelConfig.bullets || 1;
-                const totalDamagePerShot = levelConfig.damage * bullets;
-                baseDPS = totalDamagePerShot / fireRateSeconds;
-            } else if (weaponKey === 'blaster') {
-                const pellets = levelConfig.pellets;
-                const totalDamagePerShot = levelConfig.damage * pellets;
-                baseDPS = totalDamagePerShot / fireRateSeconds;
-            } else {
-                baseDPS = levelConfig.damage / fireRateSeconds;
+            // Highlight if this is the highest DPS for this level
+            if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
+                cell.classList.add('highest-dps');
             }
             
-            // Round to 1 decimal place
-            baseDPS = Math.round(baseDPS * 10) / 10;
-            
-            cellContent = `<span class="dps-total">${baseDPS}</span>`;
-            
-            // Add wing weapon DPS for Blaster
-            if (weaponKey === 'blaster' && levelConfig.wingWeapon) {
-                const wingWeapon = levelConfig.wingWeapon;
-                const wingLevel = levelConfig.wingLevel;
-                const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
-                const wingName = CONFIG.weapons[wingWeapon].name;
-                
-                // Calculate wing DPS
-                const wingFireRateSeconds = wingConfig.fireRate / 1000;
-                let wingDPS = 0;
-                
-                if (wingWeapon === 'railgun') {
-                    const wingBullets = wingConfig.bullets || 1;
-                    const wingTotalDamage = wingConfig.damage * wingBullets;
-                    wingDPS = wingTotalDamage / wingFireRateSeconds;
-                } else {
-                    wingDPS = wingConfig.damage / wingFireRateSeconds;
-                }
-                
-                wingDPS = Math.round(wingDPS * 10) / 10;
-                
-                cellContent += `<span class="wing-info">(${wingName} ${wingDPS})</span>`;
-            }
-            
-            cell.innerHTML = cellContent;
+            cell.textContent = formattedDPS;
             row.appendChild(cell);
         }
         
