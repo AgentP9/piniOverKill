@@ -3250,24 +3250,26 @@ function populateWeaponsTable() {
         for (let level = 1; level <= 9; level++) {
             const levelConfig = weaponConfig.levels[level];
             const fireRateSeconds = levelConfig.fireRate / 1000;
-            let totalDPS = 0;
+            let baseDPS = 0;
             
             if (weaponKey === 'railgun') {
                 const bullets = levelConfig.bullets || 1;
                 const totalDamagePerShot = levelConfig.damage * bullets;
-                totalDPS = totalDamagePerShot / fireRateSeconds;
+                baseDPS = totalDamagePerShot / fireRateSeconds;
+                weaponDPSData[weaponKey][level] = baseDPS;
+                dpsPerLevel[level].push(baseDPS);
             } else if (weaponKey === 'blaster') {
                 const pellets = levelConfig.pellets;
                 const totalDamagePerShot = levelConfig.damage * pellets;
-                totalDPS = totalDamagePerShot / fireRateSeconds;
+                baseDPS = totalDamagePerShot / fireRateSeconds;
                 
-                // Add wing weapon DPS to total for Blaster
+                // Calculate wing weapon DPS separately for Blaster
+                let wingDPS = 0;
                 if (levelConfig.wingWeapon) {
                     const wingWeapon = levelConfig.wingWeapon;
                     const wingLevel = levelConfig.wingLevel;
                     const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
                     const wingFireRateSeconds = wingConfig.fireRate / 1000;
-                    let wingDPS = 0;
                     
                     if (wingWeapon === 'railgun') {
                         const wingBullets = wingConfig.bullets || 1;
@@ -3277,15 +3279,22 @@ function populateWeaponsTable() {
                         wingDPS = wingConfig.damage / wingFireRateSeconds;
                     }
                     
-                    // Add wing DPS to total (wings fire from both sides)
-                    totalDPS += wingDPS * 2;
+                    // Wings fire from both sides
+                    wingDPS *= 2;
                 }
+                
+                // Store both without and with wings
+                weaponDPSData[weaponKey][level] = {
+                    withoutWings: baseDPS,
+                    withWings: baseDPS + wingDPS
+                };
+                dpsPerLevel[level].push(baseDPS);
+                dpsPerLevel[level].push(baseDPS + wingDPS);
             } else {
-                totalDPS = levelConfig.damage / fireRateSeconds;
+                baseDPS = levelConfig.damage / fireRateSeconds;
+                weaponDPSData[weaponKey][level] = baseDPS;
+                dpsPerLevel[level].push(baseDPS);
             }
-            
-            weaponDPSData[weaponKey][level] = totalDPS;
-            dpsPerLevel[level].push(totalDPS);
         }
     });
     
@@ -3300,34 +3309,80 @@ function populateWeaponsTable() {
         const weaponConfig = CONFIG.weaponLevels[weaponKey];
         const weaponName = CONFIG.weapons[weaponKey].name;
         
-        const row = document.createElement('tr');
-        
-        // Weapon name cell
-        const nameCell = document.createElement('td');
-        nameCell.className = 'weapon-name';
-        nameCell.textContent = weaponName.toUpperCase();
-        row.appendChild(nameCell);
-        
-        // Level cells (1-9)
-        for (let level = 1; level <= 9; level++) {
-            const cell = document.createElement('td');
-            cell.className = 'stat-value';
+        if (weaponKey === 'blaster') {
+            // Create two rows for Blaster: without and with wings
             
-            const dpsValue = weaponDPSData[weaponKey][level];
+            // Row 1: Blaster without wings
+            const row1 = document.createElement('tr');
+            const nameCell1 = document.createElement('td');
+            nameCell1.className = 'weapon-name';
+            nameCell1.textContent = weaponName.toUpperCase();
+            row1.appendChild(nameCell1);
             
-            // Format to always show 1 decimal place
-            const formattedDPS = dpsValue.toFixed(1);
+            for (let level = 1; level <= 9; level++) {
+                const cell = document.createElement('td');
+                cell.className = 'stat-value';
+                
+                const dpsValue = weaponDPSData[weaponKey][level].withoutWings;
+                const formattedDPS = dpsValue.toFixed(1);
+                
+                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
+                    cell.classList.add('highest-dps');
+                }
+                
+                cell.textContent = formattedDPS;
+                row1.appendChild(cell);
+            }
+            tbody.appendChild(row1);
             
-            // Highlight if this is the highest DPS for this level
-            if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
-                cell.classList.add('highest-dps');
+            // Row 2: Blaster with wings
+            const row2 = document.createElement('tr');
+            const nameCell2 = document.createElement('td');
+            nameCell2.className = 'weapon-name';
+            nameCell2.textContent = weaponName.toUpperCase() + ' w/ WINGS';
+            row2.appendChild(nameCell2);
+            
+            for (let level = 1; level <= 9; level++) {
+                const cell = document.createElement('td');
+                cell.className = 'stat-value';
+                
+                const dpsValue = weaponDPSData[weaponKey][level].withWings;
+                const formattedDPS = dpsValue.toFixed(1);
+                
+                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
+                    cell.classList.add('highest-dps');
+                }
+                
+                cell.textContent = formattedDPS;
+                row2.appendChild(cell);
+            }
+            tbody.appendChild(row2);
+        } else {
+            // Standard row for other weapons
+            const row = document.createElement('tr');
+            
+            const nameCell = document.createElement('td');
+            nameCell.className = 'weapon-name';
+            nameCell.textContent = weaponName.toUpperCase();
+            row.appendChild(nameCell);
+            
+            for (let level = 1; level <= 9; level++) {
+                const cell = document.createElement('td');
+                cell.className = 'stat-value';
+                
+                const dpsValue = weaponDPSData[weaponKey][level];
+                const formattedDPS = dpsValue.toFixed(1);
+                
+                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
+                    cell.classList.add('highest-dps');
+                }
+                
+                cell.textContent = formattedDPS;
+                row.appendChild(cell);
             }
             
-            cell.textContent = formattedDPS;
-            row.appendChild(cell);
+            tbody.appendChild(row);
         }
-        
-        tbody.appendChild(row);
     });
 }
 
