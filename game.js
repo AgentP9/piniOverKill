@@ -3225,5 +3225,125 @@ function stopWeaponsAnimation() {
     }
 }
 
+// Weapons Table Functions
+let currentStatView = 'damage'; // 'damage' or 'firerate'
+
+function populateWeaponsTable() {
+    const tbody = document.getElementById('weapons-table-body');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    // Weapon order
+    const weapons = ['laser', 'plasma', 'railgun', 'blaster'];
+    
+    weapons.forEach(weaponKey => {
+        const weaponConfig = CONFIG.weaponLevels[weaponKey];
+        const weaponName = CONFIG.weapons[weaponKey].name;
+        
+        const row = document.createElement('tr');
+        
+        // Weapon name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = 'weapon-name';
+        nameCell.textContent = weaponName.toUpperCase();
+        row.appendChild(nameCell);
+        
+        // Level cells (1-9)
+        for (let level = 1; level <= 9; level++) {
+            const levelConfig = weaponConfig.levels[level];
+            const cell = document.createElement('td');
+            cell.className = 'stat-value';
+            
+            let cellContent = '';
+            
+            if (currentStatView === 'damage') {
+                // Display damage
+                if (weaponKey === 'railgun') {
+                    const bullets = levelConfig.bullets || 1;
+                    const totalDamage = levelConfig.damage * bullets;
+                    cellContent = `${levelConfig.damage}`;
+                    if (bullets > 1) {
+                        cellContent += ` <span class="multiplier">×${bullets}</span>`;
+                    }
+                } else if (weaponKey === 'blaster') {
+                    const pellets = levelConfig.pellets;
+                    const totalDamage = levelConfig.damage * pellets;
+                    cellContent = `${levelConfig.damage} <span class="multiplier">×${pellets}</span>`;
+                    
+                    // Add wing weapon info
+                    if (levelConfig.wingWeapon) {
+                        const wingWeapon = levelConfig.wingWeapon;
+                        const wingLevel = levelConfig.wingLevel;
+                        const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                        const wingName = CONFIG.weapons[wingWeapon].name;
+                        const wingDamage = wingConfig.damage;
+                        
+                        // Check if wing weapon has multipliers
+                        let wingDamageText = `${wingDamage}`;
+                        if (wingWeapon === 'railgun' && wingConfig.bullets > 1) {
+                            wingDamageText += `×${wingConfig.bullets}`;
+                        }
+                        
+                        cellContent += `<span class="wing-info">(${wingName} ${wingDamageText}dmg)</span>`;
+                    }
+                } else {
+                    cellContent = `${levelConfig.damage}`;
+                }
+            } else {
+                // Display fire rate
+                if (weaponKey === 'blaster') {
+                    cellContent = `${levelConfig.fireRate}ms`;
+                    
+                    // Add wing weapon info
+                    if (levelConfig.wingWeapon) {
+                        const wingWeapon = levelConfig.wingWeapon;
+                        const wingLevel = levelConfig.wingLevel;
+                        const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                        const wingName = CONFIG.weapons[wingWeapon].name;
+                        const wingFireRate = wingConfig.fireRate;
+                        
+                        cellContent += `<span class="wing-info">(${wingName} ${wingFireRate}ms)</span>`;
+                    }
+                } else {
+                    cellContent = `${levelConfig.fireRate}ms`;
+                }
+            }
+            
+            cell.innerHTML = cellContent;
+            row.appendChild(cell);
+        }
+        
+        tbody.appendChild(row);
+    });
+}
+
+function setupWeaponsTableToggle() {
+    const damageButton = document.getElementById('damage-toggle');
+    const firerateButton = document.getElementById('firerate-toggle');
+    
+    if (!damageButton || !firerateButton) return;
+    
+    damageButton.addEventListener('click', () => {
+        currentStatView = 'damage';
+        damageButton.classList.add('active');
+        firerateButton.classList.remove('active');
+        populateWeaponsTable();
+    });
+    
+    firerateButton.addEventListener('click', () => {
+        currentStatView = 'firerate';
+        firerateButton.classList.add('active');
+        damageButton.classList.remove('active');
+        populateWeaponsTable();
+    });
+}
+
+// Initialize weapons table on page load
+document.addEventListener('DOMContentLoaded', () => {
+    populateWeaponsTable();
+    setupWeaponsTableToggle();
+});
+
 // Start menu animation on page load
 startMenuAnimation();
