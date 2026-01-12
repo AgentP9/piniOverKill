@@ -334,11 +334,13 @@ body {
     gap: 5px;
     width: 100%;
     font-size: 0.8em;
+    align-items: center;
 }
 
 .weapon-level {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 8px;
     color: #0a0;
 }
 

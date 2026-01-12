@@ -56,14 +56,14 @@ const CONFIG = {
         railgun: {
             levels: {
                 1: { fireRate: 200, damage: 2, bullets: 1, description: 'Low fire, low damage' },
-                2: { fireRate: 150, damage: 2, bullets: 1, description: 'Medium fire, low damage' },
-                3: { fireRate: 100, damage: 2, bullets: 1, description: 'High fire, low damage' },
-                4: { fireRate: 150, damage: 4, bullets: 1, description: 'Medium fire, medium damage' },
-                5: { fireRate: 150, damage: 2, bullets: 2, description: 'Two bullets, medium fire, low damage' },
-                6: { fireRate: 100, damage: 2, bullets: 2, description: 'Two bullets, high fire, low damage' },
-                7: { fireRate: 150, damage: 4, bullets: 2, description: 'Two bullets, medium fire, medium damage' },
-                8: { fireRate: 100, damage: 4, bullets: 2, description: 'Two bullets, high fire, medium damage' },
-                9: { fireRate: 100, damage: 6, bullets: 2, description: 'Two bullets, high fire, high damage' }
+                2: { fireRate: 160, damage: 2, bullets: 1, description: 'Medium fire, low damage' },
+                3: { fireRate: 120, damage: 2, bullets: 1, description: 'High fire, low damage' },
+                4: { fireRate: 160, damage: 4, bullets: 1, description: 'Medium fire, medium damage' },
+                5: { fireRate: 160, damage: 2, bullets: 2, description: 'Two bullets, medium fire, low damage' },
+                6: { fireRate: 120, damage: 2, bullets: 2, description: 'Two bullets, high fire, low damage' },
+                7: { fireRate: 160, damage: 4, bullets: 2, description: 'Two bullets, medium fire, medium damage' },
+                8: { fireRate: 120, damage: 4, bullets: 2, description: 'Two bullets, high fire, medium damage' },
+                9: { fireRate: 120, damage: 6, bullets: 2, description: 'Two bullets, high fire, high damage' }
             }
         },
         // Other weapons use simple multiplier system
@@ -2056,13 +2056,16 @@ function fireBullet() {
         const bulletsPerShot = levelConfig.bullets; // 1 for L1-L4, 2 for L5-L9
         const bulletSpacing = 3; // Spacing between parallel bullets
         
+        // Random Y-offset for visual effect (+/- 1 pixel)
+        const getRandomYOffset = () => Math.floor(Math.random() * 3) - 1; // -1, 0, or 1
+        
         // Fire from center of ship
         if (bulletsPerShot === 1) {
-            gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
+            gameState.bullets.push(new Bullet(centerX - 2, player.y + getRandomYOffset(), gameState.currentWeapon));
         } else {
             // Two bullets in parallel from center
-            gameState.bullets.push(new Bullet(centerX - bulletSpacing, player.y, gameState.currentWeapon));
-            gameState.bullets.push(new Bullet(centerX + bulletSpacing, player.y, gameState.currentWeapon));
+            gameState.bullets.push(new Bullet(centerX - bulletSpacing, player.y + getRandomYOffset(), gameState.currentWeapon));
+            gameState.bullets.push(new Bullet(centerX + bulletSpacing, player.y + getRandomYOffset(), gameState.currentWeapon));
         }
         
         // Wings addon shoots additional bullets
@@ -2073,14 +2076,14 @@ function fireBullet() {
             
             if (bulletsPerShot === 1) {
                 // Single bullet per wing (L1-L4)
-                gameState.bullets.push(new Bullet(leftWingX, wingY, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(rightWingX, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(leftWingX, wingY + getRandomYOffset(), gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX, wingY + getRandomYOffset(), gameState.currentWeapon));
             } else {
                 // Two bullets in parallel per wing (L5-L9)
-                gameState.bullets.push(new Bullet(leftWingX - bulletSpacing, wingY, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(leftWingX + bulletSpacing, wingY, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(rightWingX - bulletSpacing, wingY, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(rightWingX + bulletSpacing, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(leftWingX - bulletSpacing, wingY + getRandomYOffset(), gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(leftWingX + bulletSpacing, wingY + getRandomYOffset(), gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX - bulletSpacing, wingY + getRandomYOffset(), gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX + bulletSpacing, wingY + getRandomYOffset(), gameState.currentWeapon));
             }
         }
     } else {
