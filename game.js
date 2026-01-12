@@ -58,12 +58,12 @@ const CONFIG = {
                 1: { fireRate: 1500, damage: 40, description: 'Low fire, low damage' },
                 2: { fireRate: 1500, damage: 50, description: 'Low fire, medium damage' },
                 3: { fireRate: 1200, damage: 40, description: 'Medium fire, low damage' },
-                4: { fireRate: 1200, damage: 50, description: 'Medium fire, medium damage' },
-                5: { fireRate: 1200, damage: 60, description: 'Medium fire, high damage' },
-                6: { fireRate: 1000, damage: 40, description: 'High fire, low damage' },
-                7: { fireRate: 1000, damage: 50, description: 'High fire, medium damage' },
-                8: { fireRate: 1000, damage: 60, description: 'High fire, high damage' },
-                9: { fireRate: 900, damage: 60, description: 'Ultra high fire, high damage' }
+                4: { fireRate: 1200, damage: 45, description: 'Medium fire, medium damage' },
+                5: { fireRate: 1200, damage: 50, description: 'Medium fire, high damage' },
+                6: { fireRate: 1000, damage: 55, description: 'High fire, low damage' },
+                7: { fireRate: 1000, damage: 60, description: 'High fire, medium damage' },
+                8: { fireRate: 900, damage: 60, description: 'High fire, high damage' },
+                9: { fireRate: 900, damage: 65, description: 'Ultra high fire, high damage' }
             }
         },
         // Plasma level configurations
@@ -71,13 +71,13 @@ const CONFIG = {
             levels: {
                 1: { fireRate: 600, damage: 10, description: 'Low fire rate, low damage' },
                 2: { fireRate: 600, damage: 14, description: 'Low fire rate, medium damage' },
-                3: { fireRate: 500, damage: 10, description: 'Medium fire rate, low damage' },
+                3: { fireRate: 500, damage: 12, description: 'Medium fire rate, low damage' },
                 4: { fireRate: 500, damage: 14, description: 'Medium fire rate, medium damage' },
                 5: { fireRate: 500, damage: 18, description: 'Medium fire rate, high damage' },
-                6: { fireRate: 420, damage: 10, description: 'High fire rate, low damage' },
-                7: { fireRate: 420, damage: 14, description: 'High fire rate, medium damage' },
-                8: { fireRate: 420, damage: 18, description: 'High fire rate, high damage' },
-                9: { fireRate: 380, damage: 18, description: 'Ultra high fire rate, high damage' }
+                6: { fireRate: 420, damage: 18, description: 'High fire rate, low damage' },
+                7: { fireRate: 420, damage: 20, description: 'High fire rate, medium damage' },
+                8: { fireRate: 420, damage: 25, description: 'High fire rate, high damage' },
+                9: { fireRate: 380, damage: 25, description: 'Ultra high fire rate, high damage' }
             }
         },
         // Railgun level configurations
@@ -86,26 +86,26 @@ const CONFIG = {
                 1: { fireRate: 200, damage: 2, bullets: 1, description: 'Low fire, low damage' },
                 2: { fireRate: 160, damage: 2, bullets: 1, description: 'Medium fire, low damage' },
                 3: { fireRate: 120, damage: 2, bullets: 1, description: 'High fire, low damage' },
-                4: { fireRate: 160, damage: 4, bullets: 1, description: 'Medium fire, medium damage' },
-                5: { fireRate: 160, damage: 2, bullets: 2, description: 'Two bullets, medium fire, low damage' },
-                6: { fireRate: 120, damage: 2, bullets: 2, description: 'Two bullets, high fire, low damage' },
+                4: { fireRate: 140, damage: 4, bullets: 1, description: 'Medium fire, medium damage' },
+                5: { fireRate: 160, damage: 3, bullets: 2, description: 'Two bullets, medium fire, low damage' },
+                6: { fireRate: 140, damage: 3, bullets: 2, description: 'Two bullets, high fire, low damage' },
                 7: { fireRate: 160, damage: 4, bullets: 2, description: 'Two bullets, medium fire, medium damage' },
                 8: { fireRate: 120, damage: 4, bullets: 2, description: 'Two bullets, high fire, medium damage' },
-                9: { fireRate: 120, damage: 6, bullets: 2, description: 'Two bullets, high fire, high damage' }
+                9: { fireRate: 140, damage: 5, bullets: 2, description: 'Two bullets, high fire, high damage' }
             }
         },
         // Blaster level configurations
         blaster: {
             levels: {
-                1: { fireRate: 700, damage: 6, pellets: 5, wingWeapon: 'plasma', wingLevel: 1, description: 'Low fire, low damage' },
-                2: { fireRate: 700, damage: 8, pellets: 5, wingWeapon: 'laser', wingLevel: 2, description: 'Low fire, medium damage' },
-                3: { fireRate: 600, damage: 6, pellets: 6, wingWeapon: 'railgun', wingLevel: 3, description: 'Medium fire, low damage' },
-                4: { fireRate: 600, damage: 8, pellets: 6, wingWeapon: 'railgun', wingLevel: 4, description: 'Medium fire, medium damage' },
-                5: { fireRate: 600, damage: 10, pellets: 6, wingWeapon: 'plasma', wingLevel: 5, description: 'Medium fire, high damage' },
-                6: { fireRate: 550, damage: 6, pellets: 7, wingWeapon: 'laser', wingLevel: 5, description: 'High fire, low damage' },
-                7: { fireRate: 550, damage: 8, pellets: 7, wingWeapon: 'railgun', wingLevel: 5, description: 'High fire, medium damage' },
-                8: { fireRate: 550, damage: 10, pellets: 7, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage' },
-                9: { fireRate: 550, damage: 10, pellets: 8, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage, max pellets' }
+                1: { fireRate: 700, damage: 3, pellets: 5, wingWeapon: 'plasma', wingLevel: 1, description: 'Low fire, low damage' },
+                2: { fireRate: 700, damage: 4, pellets: 5, wingWeapon: 'laser', wingLevel: 2, description: 'Low fire, medium damage' },
+                3: { fireRate: 600, damage: 4, pellets: 6, wingWeapon: 'railgun', wingLevel: 3, description: 'Medium fire, low damage' },
+                4: { fireRate: 600, damage: 5, pellets: 6, wingWeapon: 'railgun', wingLevel: 4, description: 'Medium fire, medium damage' },
+                5: { fireRate: 550, damage: 5, pellets: 6, wingWeapon: 'plasma', wingLevel: 5, description: 'Medium fire, high damage' },
+                6: { fireRate: 550, damage: 5, pellets: 7, wingWeapon: 'laser', wingLevel: 5, description: 'High fire, low damage' },
+                7: { fireRate: 525, damage: 5, pellets: 7, wingWeapon: 'railgun', wingLevel: 5, description: 'High fire, medium damage' },
+                8: { fireRate: 500, damage: 5, pellets: 7, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage' },
+                9: { fireRate: 550, damage: 5, pellets: 8, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, high damage, max pellets' }
             }
         }
     },
