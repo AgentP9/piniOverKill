@@ -99,11 +99,11 @@ const CONFIG = {
             levels: {
                 1: { fireRate: 700, damage: 3, pellets: 5, wingWeapon: 'plasma', wingLevel: 1, description: 'Low fire, low damage' },
                 2: { fireRate: 700, damage: 4, pellets: 5, wingWeapon: 'laser', wingLevel: 2, description: 'Low fire, medium damage' },
-                3: { fireRate: 600, damage: 4, pellets: 6, wingWeapon: 'railgun', wingLevel: 3, description: 'Medium fire, low damage' },
-                4: { fireRate: 600, damage: 5, pellets: 6, wingWeapon: 'railgun', wingLevel: 4, description: 'Medium fire, medium damage' },
-                5: { fireRate: 550, damage: 5, pellets: 6, wingWeapon: 'plasma', wingLevel: 5, description: 'Medium fire, high damage' },
-                6: { fireRate: 550, damage: 5, pellets: 7, wingWeapon: 'laser', wingLevel: 5, description: 'High fire, medium damage' },
-                7: { fireRate: 525, damage: 5, pellets: 7, wingWeapon: 'railgun', wingLevel: 5, description: 'High fire, medium damage' },
+                3: { fireRate: 700, damage: 4, pellets: 6, wingWeapon: 'railgun', wingLevel: 3, description: 'Medium fire, low damage' },
+                4: { fireRate: 700, damage: 5, pellets: 6, wingWeapon: 'railgun', wingLevel: 4, description: 'Medium fire, medium damage' },
+                5: { fireRate: 600, damage: 5, pellets: 6, wingWeapon: 'plasma', wingLevel: 5, description: 'Medium fire, high damage' },
+                6: { fireRate: 600, damage: 5, pellets: 7, wingWeapon: 'laser', wingLevel: 5, description: 'High fire, medium damage' },
+                7: { fireRate: 550, damage: 5, pellets: 7, wingWeapon: 'railgun', wingLevel: 5, description: 'High fire, medium damage' },
                 8: { fireRate: 500, damage: 5, pellets: 7, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, medium damage' },
                 9: { fireRate: 550, damage: 5, pellets: 8, wingWeapon: 'plasma', wingLevel: 6, description: 'High fire, medium damage, max pellets' }
             }
