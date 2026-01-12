@@ -334,10 +334,6 @@ const gameState = {
     enemiesDefeated: 0,
     enemiesInWave: 0,
     currentWeapon: 'plasma',
-    weaponUpgrades: {
-        rateOfFire: 1,
-        damageRate: 1
-    },
     weaponLevels: {
         laser: 1,
         plasma: 1,
@@ -381,8 +377,20 @@ const menuCtx = menuCanvas.getContext('2d');
 menuCanvas.width = CONFIG.canvas.width;
 menuCanvas.height = CONFIG.canvas.height;
 
+// Weapons Canvas Setup
+const weaponsCanvas = document.getElementById('weapons-canvas');
+const weaponsCtx = weaponsCanvas.getContext('2d');
+weaponsCanvas.width = CONFIG.canvas.width;
+weaponsCanvas.height = CONFIG.canvas.height;
+
 // Menu starfield state
 const menuStarfield = {
+    scrollOffset: 0,
+    animationId: null
+};
+
+// Weapons starfield state
+const weaponsStarfield = {
     scrollOffset: 0,
     animationId: null
 };
@@ -392,11 +400,14 @@ const screens = {
     menu: document.getElementById('menu-screen'),
     game: document.getElementById('game-screen'),
     pause: document.getElementById('pause-screen'),
-    gameover: document.getElementById('gameover-screen')
+    gameover: document.getElementById('gameover-screen'),
+    weaponsOverview: document.getElementById('weapons-overview-screen')
 };
 
 // Button Event Listeners
 document.getElementById('start-button').addEventListener('click', startGame);
+document.getElementById('weapons-button').addEventListener('click', showWeaponsOverview);
+document.getElementById('weapons-back-button').addEventListener('click', quitToMenu);
 document.getElementById('resume-button').addEventListener('click', resumeGame);
 document.getElementById('quit-button').addEventListener('click', quitToMenu);
 document.getElementById('restart-button').addEventListener('click', startGame);
@@ -999,12 +1010,12 @@ class Bullet {
         if (weapon === 'railgun') {
             const railgunLevel = gameState.weaponLevels.railgun;
             const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
-            this.damage = levelConfig.damage * gameState.weaponUpgrades.damageRate;
+            this.damage = levelConfig.damage;
         } else {
             // Other weapons use base damage plus level-based improvements
             const weaponLevel = gameState.weaponLevels[weapon];
             const levelBonus = (weaponLevel - 1) * CONFIG.weaponLevels[weapon].damagePerLevel;
-            this.damage = (weaponConfig.damage + levelBonus) * gameState.weaponUpgrades.damageRate;
+            this.damage = weaponConfig.damage + levelBonus;
         }
         
         this.color = weaponConfig.color;
@@ -1434,7 +1445,7 @@ class Powerup {
         this.y = y;
         this.width = 20;
         this.height = 20;
-        this.type = type; // 'rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'
+        this.type = type; // 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'
         this.speed = 1;
         this.rotation = 0;
     }
@@ -1451,26 +1462,6 @@ class Powerup {
         ctx.rotate(this.rotation);
         
         switch (this.type) {
-            case 'rateOfFire':
-                // Clock/speed icon
-                ctx.strokeStyle = '#ffff00';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(0, 0, 8, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(-1, -6, 2, 6);
-                ctx.fillRect(-1, -1, 4, 2);
-                break;
-            case 'damageRate':
-                // Power/damage icon
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(-8, -8, 16, 16);
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(-4, -4, 8, 8);
-                ctx.fillStyle = '#ff0000';
-                ctx.fillRect(-2, -2, 4, 4);
-                break;
             case 'shieldHeal':
                 // Shield heal icon (cyan shield with +)
                 ctx.strokeStyle = '#00ffff';
@@ -1924,10 +1915,6 @@ function resetGame() {
     gameState.enemiesDefeated = 0;
     gameState.enemiesInWave = 0;
     gameState.currentWeapon = 'plasma';
-    gameState.weaponUpgrades = {
-        rateOfFire: 1,
-        damageRate: 1
-    };
     gameState.weaponLevels = {
         laser: 1,
         plasma: 1,
@@ -1983,12 +1970,21 @@ function showScreen(screenName) {
     Object.values(screens).forEach(screen => screen.style.display = 'none');
     screens[screenName].style.display = 'flex';
     
-    // Start or stop menu animation based on screen
+    // Start or stop animations based on screen
     if (screenName === 'menu') {
         startMenuAnimation();
+        stopWeaponsAnimation();
+    } else if (screenName === 'weaponsOverview') {
+        stopMenuAnimation();
+        startWeaponsAnimation();
     } else {
         stopMenuAnimation();
+        stopWeaponsAnimation();
     }
+}
+
+function showWeaponsOverview() {
+    showScreen('weaponsOverview');
 }
 
 function togglePause() {
@@ -2026,12 +2022,12 @@ function fireBullet() {
     if (gameState.currentWeapon === 'railgun') {
         const railgunLevel = gameState.weaponLevels.railgun;
         const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
-        adjustedFireRate = levelConfig.fireRate / gameState.weaponUpgrades.rateOfFire;
+        adjustedFireRate = levelConfig.fireRate;
     } else {
         // Other weapons use fire rate improvement per level
         const weaponLevel = gameState.weaponLevels[gameState.currentWeapon];
         const fireRateMultiplier = 1 + (weaponLevel - 1) * CONFIG.weaponLevels[gameState.currentWeapon].fireRateImprovement;
-        adjustedFireRate = weaponConfig.fireRate / (gameState.weaponUpgrades.rateOfFire * fireRateMultiplier);
+        adjustedFireRate = weaponConfig.fireRate / fireRateMultiplier;
     }
     
     if (now - gameState.lastFire < adjustedFireRate) return;
@@ -2289,7 +2285,7 @@ function spawnAsteroid() {
 function spawnPowerup(x, y) {
     if (Math.random() > CONFIG.powerup.spawnChance) return;
 
-    const types = ['rateOfFire', 'damageRate', 'shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'];
+    const types = ['shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'];
     const type = types[Math.floor(Math.random() * types.length)];
     gameState.powerups.push(new Powerup(x, y, type));
 }
@@ -2555,20 +2551,6 @@ function checkCollisions() {
             gameState.powerups.splice(i, 1);
             
             switch (powerup.type) {
-                case 'rateOfFire':
-                    gameState.weaponUpgrades.rateOfFire = Math.min(
-                        CONFIG.powerup.upgradeMaxCap, 
-                        gameState.weaponUpgrades.rateOfFire + CONFIG.powerup.upgradeIncrement
-                    );
-                    showPickupNotification('FIRE RATE UPGRADE');
-                    break;
-                case 'damageRate':
-                    gameState.weaponUpgrades.damageRate = Math.min(
-                        CONFIG.powerup.upgradeMaxCap, 
-                        gameState.weaponUpgrades.damageRate + CONFIG.powerup.upgradeIncrement
-                    );
-                    showPickupNotification('DAMAGE UPGRADE');
-                    break;
                 case 'shieldHeal':
                     player.healShield(CONFIG.powerup.shieldHealAmount);
                     showPickupNotification('SHIELD HEALED');
@@ -3133,6 +3115,43 @@ function stopMenuAnimation() {
     if (menuStarfield.animationId) {
         cancelAnimationFrame(menuStarfield.animationId);
         menuStarfield.animationId = null;
+    }
+}
+
+// Weapons Starfield Animation
+function drawWeaponsStarfield() {
+    // Clear canvas
+    weaponsCtx.fillStyle = '#000000';
+    weaponsCtx.fillRect(0, 0, weaponsCanvas.width, weaponsCanvas.height);
+    
+    // Scrolling starfield
+    weaponsStarfield.scrollOffset = (weaponsStarfield.scrollOffset + 1) % 600;
+    
+    // Draw stars
+    weaponsCtx.fillStyle = '#ffffff';
+    for (let i = 0; i < CONFIG.stars.count; i++) {
+        const x = (i * CONFIG.stars.seedX) % CONFIG.canvas.width;
+        const y = ((i * CONFIG.stars.seedY + weaponsStarfield.scrollOffset) % CONFIG.canvas.height);
+        const size = (i % 3) + 1;
+        weaponsCtx.fillRect(x, y, size, size);
+    }
+}
+
+function weaponsAnimationLoop() {
+    drawWeaponsStarfield();
+    weaponsStarfield.animationId = requestAnimationFrame(weaponsAnimationLoop);
+}
+
+function startWeaponsAnimation() {
+    if (!weaponsStarfield.animationId) {
+        weaponsAnimationLoop();
+    }
+}
+
+function stopWeaponsAnimation() {
+    if (weaponsStarfield.animationId) {
+        cancelAnimationFrame(weaponsStarfield.animationId);
+        weaponsStarfield.animationId = null;
     }
 }
 
