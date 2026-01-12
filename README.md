@@ -108,7 +108,7 @@ The application runs in a lightweight Docker container:
 | Key | Action |
 |-----|--------|
 | **Arrow Keys** or **WASD** | Move ship |
-| **SPACE** | Fire weapon |
+| **SPACE** | Toggle Auto-Fire |
 | **TAB** | Switch weapon type |
 | **ESC** | Pause/Resume game |
 

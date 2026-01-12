@@ -361,6 +361,33 @@ body {
     text-shadow: 0 0 3px #0f0;
 }
 
+#weapon-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    width: 100%;
+    font-size: 0.75em;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #0a0;
+}
+
+.weapon-stat {
+    display: flex;
+    justify-content: space-between;
+    color: #0c0;
+}
+
+.weapon-stat span {
+    font-weight: bold;
+    color: #0f0;
+}
+
+#autofire-status.active span {
+    color: #ff0;
+    text-shadow: 0 0 3px #ff0;
+}
+
 #weapons-canvas {
     position: absolute;
     top: 0;
@@ -434,6 +461,29 @@ body {
     border: 1px solid #0a0;
     font-weight: bold;
     letter-spacing: 1px;
+    position: relative;
+}
+
+.weapons-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.weapons-table th.sortable:hover {
+    background: rgba(0, 51, 0, 0.9);
+    box-shadow: 0 0 5px #0f0;
+}
+
+.weapons-table th.sort-asc::after {
+    content: ' ▲';
+    font-size: 0.8em;
+    color: #ff0;
+}
+
+.weapons-table th.sort-desc::after {
+    content: ' ▼';
+    font-size: 0.8em;
+    color: #ff0;
 }
 
 .weapons-table th:first-child {
