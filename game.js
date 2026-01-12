@@ -2053,32 +2053,34 @@ function fireBullet() {
         // Railgun has special level-based behavior
         const railgunLevel = gameState.weaponLevels.railgun;
         const levelConfig = CONFIG.weaponLevels.railgun.levels[railgunLevel];
+        const bulletsPerShot = levelConfig.bullets; // 1 for L1-L4, 2 for L5-L9
+        const bulletSpacing = 3; // Spacing between parallel bullets
         
-        if (levelConfig.bullets === 1) {
-            // Single bullet mode (L1-L4): fires from center
+        // Fire from center of ship
+        if (bulletsPerShot === 1) {
             gameState.bullets.push(new Bullet(centerX - 2, player.y, gameState.currentWeapon));
-            
-            // Wings addon still shoots additional bullets for railgun L1-L4 if wings are installed
-            if (wingsLevel > 0) {
-                gameState.bullets.push(new Bullet(player.x - 12, player.y + player.height / 2, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(player.x + player.width + 12, player.y + player.height / 2, gameState.currentWeapon));
-            }
         } else {
-            // Dual bullet mode (L5-L9): fires from wings in parallel
-            // Calculate wing positions - center of wings based on visual scaling
-            if (wingsLevel > 0) {
-                const levelScale = 1 + (wingsLevel - 1) * CONFIG.addons.visualScaling.wings;
-                const wingWidth = 15 * levelScale;
-                const wingYOffset = player.height / 2 + 9; // Middle of wing cannon
-                
-                // Left wing bullet - from center of left wing
-                gameState.bullets.push(new Bullet(player.x - wingWidth / 2, player.y + wingYOffset, gameState.currentWeapon));
-                // Right wing bullet - from center of right wing
-                gameState.bullets.push(new Bullet(player.x + player.width + wingWidth / 2, player.y + wingYOffset, gameState.currentWeapon));
+            // Two bullets in parallel from center
+            gameState.bullets.push(new Bullet(centerX - bulletSpacing, player.y, gameState.currentWeapon));
+            gameState.bullets.push(new Bullet(centerX + bulletSpacing, player.y, gameState.currentWeapon));
+        }
+        
+        // Wings addon shoots additional bullets
+        if (wingsLevel > 0) {
+            const leftWingX = player.x - 12;
+            const rightWingX = player.x + player.width + 12;
+            const wingY = player.y + player.height / 2;
+            
+            if (bulletsPerShot === 1) {
+                // Single bullet per wing (L1-L4)
+                gameState.bullets.push(new Bullet(leftWingX, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX, wingY, gameState.currentWeapon));
             } else {
-                // No wings installed, fire from ship sides as fallback
-                gameState.bullets.push(new Bullet(player.x + 5, player.y + player.height / 2, gameState.currentWeapon));
-                gameState.bullets.push(new Bullet(player.x + player.width - 5, player.y + player.height / 2, gameState.currentWeapon));
+                // Two bullets in parallel per wing (L5-L9)
+                gameState.bullets.push(new Bullet(leftWingX - bulletSpacing, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(leftWingX + bulletSpacing, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX - bulletSpacing, wingY, gameState.currentWeapon));
+                gameState.bullets.push(new Bullet(rightWingX + bulletSpacing, wingY, gameState.currentWeapon));
             }
         }
     } else {
