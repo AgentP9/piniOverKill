@@ -418,18 +418,46 @@ canvas.height = CONFIG.canvas.height;
 
 // Utility function to darken a hex color
 function darkenColor(color, amount) {
-    return color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-        const val = parseInt(m, 16);
-        return Math.max(0, val - amount).toString(16).padStart(2, '0');
-    });
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Parse RGB components
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Darken each component
+    const newR = Math.max(0, r - amount);
+    const newG = Math.max(0, g - amount);
+    const newB = Math.max(0, b - amount);
+    
+    // Convert back to hex
+    return '#' + 
+        newR.toString(16).padStart(2, '0') +
+        newG.toString(16).padStart(2, '0') +
+        newB.toString(16).padStart(2, '0');
 }
 
 // Utility function to lighten a hex color
 function lightenColor(color, amount) {
-    return color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-        const val = parseInt(m, 16);
-        return Math.min(255, val + amount).toString(16).padStart(2, '0');
-    });
+    // Remove # if present
+    const hex = color.replace('#', '');
+    
+    // Parse RGB components
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    
+    // Lighten each component
+    const newR = Math.min(255, r + amount);
+    const newG = Math.min(255, g + amount);
+    const newB = Math.min(255, b + amount);
+    
+    // Convert back to hex
+    return '#' + 
+        newR.toString(16).padStart(2, '0') +
+        newG.toString(16).padStart(2, '0') +
+        newB.toString(16).padStart(2, '0');
 }
 
 // Menu Canvas Setup
