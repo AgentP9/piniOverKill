@@ -416,6 +416,22 @@ const ctx = canvas.getContext('2d');
 canvas.width = CONFIG.canvas.width;
 canvas.height = CONFIG.canvas.height;
 
+// Utility function to darken a hex color
+function darkenColor(color, amount) {
+    return color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
+        const val = parseInt(m, 16);
+        return Math.max(0, val - amount).toString(16).padStart(2, '0');
+    });
+}
+
+// Utility function to lighten a hex color
+function lightenColor(color, amount) {
+    return color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
+        const val = parseInt(m, 16);
+        return Math.min(255, val + amount).toString(16).padStart(2, '0');
+    });
+}
+
 // Menu Canvas Setup
 const menuCanvas = document.getElementById('menu-canvas');
 const menuCtx = menuCanvas.getContext('2d');
@@ -1045,10 +1061,7 @@ class Enemy {
         if (this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
             const wingWidth = this.width * 0.15;
             const wingHeight = this.height * 0.6;
-            const darkerColor = this.color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-                const val = parseInt(m, 16);
-                return Math.max(0, val - 40).toString(16).padStart(2, '0');
-            });
+            const darkerColor = darkenColor(this.color, 40);
             
             // Left wing
             ctx.fillStyle = darkerColor;
@@ -1074,10 +1087,7 @@ class Enemy {
         ctx.fill();
         
         // Add body outline for definition
-        ctx.strokeStyle = this.color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-            const val = parseInt(m, 16);
-            return Math.min(255, val + 40).toString(16).padStart(2, '0');
-        });
+        ctx.strokeStyle = lightenColor(this.color, 40);
         ctx.lineWidth = 1;
         ctx.stroke();
         
@@ -1129,10 +1139,7 @@ class Enemy {
         
         // Add armor plating details for larger ships
         if (this.type === 'heavy' || this.type === 'cruiser' || this.type === 'battleship') {
-            const plateColor = this.color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-                const val = parseInt(m, 16);
-                return Math.max(0, val - 30).toString(16).padStart(2, '0');
-            });
+            const plateColor = darkenColor(this.color, 30);
             ctx.fillStyle = plateColor;
             
             // Horizontal armor plates
@@ -1418,10 +1425,7 @@ class Boss {
         }
         
         // Draw outer hull armor (darker shade)
-        const armorColor = this.color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-            const val = parseInt(m, 16);
-            return Math.max(0, val - 50).toString(16).padStart(2, '0');
-        });
+        const armorColor = darkenColor(this.color, 50);
         
         // Main hull structure
         ctx.fillStyle = armorColor;
@@ -1448,10 +1452,7 @@ class Boss {
         ctx.fill();
         
         // Add armor plating lines
-        const plateColor = this.color.replace(/[0-9a-f]{2}(?=[0-9a-f]{2}$)/i, (m) => {
-            const val = parseInt(m, 16);
-            return Math.min(255, val + 30).toString(16).padStart(2, '0');
-        });
+        const plateColor = lightenColor(this.color, 30);
         ctx.strokeStyle = plateColor;
         ctx.lineWidth = 2;
         
