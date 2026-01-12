@@ -55,15 +55,15 @@ const CONFIG = {
         // Laser level configurations
         laser: {
             levels: {
-                1: { fireRate: 1500, damage: 40, description: 'LFR + LD' },
-                2: { fireRate: 1500, damage: 50, description: 'LFR + MD' },
-                3: { fireRate: 1200, damage: 40, description: 'MFR + LD' },
-                4: { fireRate: 1200, damage: 50, description: 'MFR + MD' },
-                5: { fireRate: 1200, damage: 60, description: 'MFR + HD' },
-                6: { fireRate: 1000, damage: 40, description: 'HFR + LD' },
-                7: { fireRate: 1000, damage: 50, description: 'HFR + MD' },
-                8: { fireRate: 1000, damage: 60, description: 'HFR + HD' },
-                9: { fireRate: 900, damage: 60, description: 'UHFR + HD' }
+                1: { fireRate: 1500, damage: 40, description: 'Low fire, low damage' },
+                2: { fireRate: 1500, damage: 50, description: 'Low fire, medium damage' },
+                3: { fireRate: 1200, damage: 40, description: 'Medium fire, low damage' },
+                4: { fireRate: 1200, damage: 50, description: 'Medium fire, medium damage' },
+                5: { fireRate: 1200, damage: 60, description: 'Medium fire, high damage' },
+                6: { fireRate: 1000, damage: 40, description: 'High fire, low damage' },
+                7: { fireRate: 1000, damage: 50, description: 'High fire, medium damage' },
+                8: { fireRate: 1000, damage: 60, description: 'High fire, high damage' },
+                9: { fireRate: 900, damage: 60, description: 'Ultra high fire, high damage' }
             }
         },
         // Railgun level configurations
