@@ -3226,6 +3226,8 @@ function stopWeaponsAnimation() {
 }
 
 // Weapons Table Functions
+let currentShipView = 'noWings'; // 'noWings' or 'withWings'
+
 function populateWeaponsTable() {
     const tbody = document.getElementById('weapons-table-body');
     if (!tbody) return;
@@ -3256,45 +3258,50 @@ function populateWeaponsTable() {
                 const bullets = levelConfig.bullets || 1;
                 const totalDamagePerShot = levelConfig.damage * bullets;
                 baseDPS = totalDamagePerShot / fireRateSeconds;
-                weaponDPSData[weaponKey][level] = baseDPS;
-                dpsPerLevel[level].push(baseDPS);
             } else if (weaponKey === 'blaster') {
                 const pellets = levelConfig.pellets;
                 const totalDamagePerShot = levelConfig.damage * pellets;
                 baseDPS = totalDamagePerShot / fireRateSeconds;
-                
-                // Calculate wing weapon DPS separately for Blaster
-                let wingDPS = 0;
-                if (levelConfig.wingWeapon) {
-                    const wingWeapon = levelConfig.wingWeapon;
-                    const wingLevel = levelConfig.wingLevel;
-                    const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
-                    const wingFireRateSeconds = wingConfig.fireRate / 1000;
-                    
-                    if (wingWeapon === 'railgun') {
-                        const wingBullets = wingConfig.bullets || 1;
-                        const wingTotalDamage = wingConfig.damage * wingBullets;
-                        wingDPS = wingTotalDamage / wingFireRateSeconds;
-                    } else {
-                        wingDPS = wingConfig.damage / wingFireRateSeconds;
-                    }
-                    
-                    // Wings fire from both sides
-                    wingDPS *= 2;
-                }
-                
-                // Store both without and with wings
-                weaponDPSData[weaponKey][level] = {
-                    withoutWings: baseDPS,
-                    withWings: baseDPS + wingDPS
-                };
-                dpsPerLevel[level].push(baseDPS);
-                dpsPerLevel[level].push(baseDPS + wingDPS);
             } else {
                 baseDPS = levelConfig.damage / fireRateSeconds;
-                weaponDPSData[weaponKey][level] = baseDPS;
-                dpsPerLevel[level].push(baseDPS);
             }
+            
+            // For "with wings" view, all weapons fire 3x (main + 2 wings)
+            // But Blaster wings fire the specific wing weapon, not Blaster itself
+            let dpsWithWings = baseDPS;
+            
+            if (weaponKey === 'blaster' && levelConfig.wingWeapon) {
+                // Blaster has special wing weapons that fire different weapons
+                const wingWeapon = levelConfig.wingWeapon;
+                const wingLevel = levelConfig.wingLevel;
+                const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                const wingFireRateSeconds = wingConfig.fireRate / 1000;
+                let wingDPS = 0;
+                
+                if (wingWeapon === 'railgun') {
+                    const wingBullets = wingConfig.bullets || 1;
+                    const wingTotalDamage = wingConfig.damage * wingBullets;
+                    wingDPS = wingTotalDamage / wingFireRateSeconds;
+                } else {
+                    wingDPS = wingConfig.damage / wingFireRateSeconds;
+                }
+                
+                // Blaster: base + 2 wing weapons (which fire different weapon types)
+                dpsWithWings = baseDPS + (wingDPS * 2);
+            } else {
+                // For Laser, Plasma, Railgun: when wings are equipped, they fire the same weapon
+                // Main weapon + 2 wings firing same weapon = 3x
+                dpsWithWings = baseDPS * 3;
+            }
+            
+            weaponDPSData[weaponKey][level] = {
+                noWings: baseDPS,
+                withWings: dpsWithWings
+            };
+            
+            // Add to dpsPerLevel for max calculation based on current view
+            const dpsForView = currentShipView === 'noWings' ? baseDPS : dpsWithWings;
+            dpsPerLevel[level].push(dpsForView);
         }
     });
     
@@ -3309,86 +3316,59 @@ function populateWeaponsTable() {
         const weaponConfig = CONFIG.weaponLevels[weaponKey];
         const weaponName = CONFIG.weapons[weaponKey].name;
         
-        if (weaponKey === 'blaster') {
-            // Create two rows for Blaster: without and with wings
+        const row = document.createElement('tr');
+        
+        // Weapon name cell
+        const nameCell = document.createElement('td');
+        nameCell.className = 'weapon-name';
+        nameCell.textContent = weaponName.toUpperCase();
+        row.appendChild(nameCell);
+        
+        // Level cells (1-9)
+        for (let level = 1; level <= 9; level++) {
+            const cell = document.createElement('td');
+            cell.className = 'stat-value';
             
-            // Row 1: Blaster without wings
-            const row1 = document.createElement('tr');
-            const nameCell1 = document.createElement('td');
-            nameCell1.className = 'weapon-name';
-            nameCell1.textContent = weaponName.toUpperCase();
-            row1.appendChild(nameCell1);
+            const dpsValue = weaponDPSData[weaponKey][level][currentShipView];
+            const formattedDPS = dpsValue.toFixed(1);
             
-            for (let level = 1; level <= 9; level++) {
-                const cell = document.createElement('td');
-                cell.className = 'stat-value';
-                
-                const dpsValue = weaponDPSData[weaponKey][level].withoutWings;
-                const formattedDPS = dpsValue.toFixed(1);
-                
-                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
-                    cell.classList.add('highest-dps');
-                }
-                
-                cell.textContent = formattedDPS;
-                row1.appendChild(cell);
-            }
-            tbody.appendChild(row1);
-            
-            // Row 2: Blaster with wings
-            const row2 = document.createElement('tr');
-            const nameCell2 = document.createElement('td');
-            nameCell2.className = 'weapon-name';
-            nameCell2.textContent = weaponName.toUpperCase() + ' w/ WINGS';
-            row2.appendChild(nameCell2);
-            
-            for (let level = 1; level <= 9; level++) {
-                const cell = document.createElement('td');
-                cell.className = 'stat-value';
-                
-                const dpsValue = weaponDPSData[weaponKey][level].withWings;
-                const formattedDPS = dpsValue.toFixed(1);
-                
-                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
-                    cell.classList.add('highest-dps');
-                }
-                
-                cell.textContent = formattedDPS;
-                row2.appendChild(cell);
-            }
-            tbody.appendChild(row2);
-        } else {
-            // Standard row for other weapons
-            const row = document.createElement('tr');
-            
-            const nameCell = document.createElement('td');
-            nameCell.className = 'weapon-name';
-            nameCell.textContent = weaponName.toUpperCase();
-            row.appendChild(nameCell);
-            
-            for (let level = 1; level <= 9; level++) {
-                const cell = document.createElement('td');
-                cell.className = 'stat-value';
-                
-                const dpsValue = weaponDPSData[weaponKey][level];
-                const formattedDPS = dpsValue.toFixed(1);
-                
-                if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
-                    cell.classList.add('highest-dps');
-                }
-                
-                cell.textContent = formattedDPS;
-                row.appendChild(cell);
+            if (Math.abs(dpsValue - maxDPSPerLevel[level]) < 0.01) {
+                cell.classList.add('highest-dps');
             }
             
-            tbody.appendChild(row);
+            cell.textContent = formattedDPS;
+            row.appendChild(cell);
         }
+        
+        tbody.appendChild(row);
+    });
+}
+
+function setupShipViewToggle() {
+    const noWingsButton = document.getElementById('ship-no-wings-toggle');
+    const withWingsButton = document.getElementById('ship-with-wings-toggle');
+    
+    if (!noWingsButton || !withWingsButton) return;
+    
+    noWingsButton.addEventListener('click', () => {
+        currentShipView = 'noWings';
+        noWingsButton.classList.add('active');
+        withWingsButton.classList.remove('active');
+        populateWeaponsTable();
+    });
+    
+    withWingsButton.addEventListener('click', () => {
+        currentShipView = 'withWings';
+        withWingsButton.classList.add('active');
+        noWingsButton.classList.remove('active');
+        populateWeaponsTable();
     });
 }
 
 // Initialize weapons table on page load
 document.addEventListener('DOMContentLoaded', () => {
     populateWeaponsTable();
+    setupShipViewToggle();
 });
 
 // Start menu animation on page load
