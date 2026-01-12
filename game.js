@@ -407,7 +407,9 @@ const gameState = {
     kamikazeDronesRemaining: 0, // Number of drones remaining to spawn
     lastDroneSpawn: 0,
     enemyDrones: [], // Array of enemy-deployed drones
-    stars: [] // Array of star objects for parallax starfield
+    stars: [], // Array of star objects for parallax starfield
+    cachedDPS: 0, // Cache current weapon DPS to avoid recalculation
+    lastWeaponConfig: null // Track last weapon configuration for cache invalidation
 };
 
 // Canvas Setup
@@ -3216,48 +3218,61 @@ function updateHUD() {
 function updateWeaponStats() {
     const currentWeapon = gameState.currentWeapon;
     const level = gameState.weaponLevels[currentWeapon];
-    const levelConfig = CONFIG.weaponLevels[currentWeapon].levels[level];
-    
-    // Calculate DPS
-    let dps = 0;
-    const fireRateSeconds = levelConfig.fireRate / 1000;
-    
-    if (currentWeapon === 'railgun') {
-        const bullets = levelConfig.bullets || 1;
-        const totalDamagePerShot = levelConfig.damage * bullets;
-        dps = totalDamagePerShot / fireRateSeconds;
-    } else if (currentWeapon === 'blaster') {
-        const pellets = levelConfig.pellets;
-        const totalDamagePerShot = levelConfig.damage * pellets;
-        dps = totalDamagePerShot / fireRateSeconds;
-    } else {
-        dps = levelConfig.damage / fireRateSeconds;
-    }
-    
-    // Account for wings addon
     const wingsLevel = gameState.shipUpgrades.wingsLevel;
-    if (wingsLevel > 0) {
-        if (currentWeapon === 'blaster' && levelConfig.wingWeapon) {
-            // Blaster has special wing weapons
-            const wingWeapon = levelConfig.wingWeapon;
-            const wingLevel = Math.min(level, CONFIG.weaponLevels.maxLevel);
-            const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
-            const wingFireRateSeconds = wingConfig.fireRate / 1000;
-            let wingDPS = 0;
-            
-            if (wingWeapon === 'railgun') {
-                const wingBullets = wingConfig.bullets || 1;
-                const wingTotalDamage = wingConfig.damage * wingBullets;
-                wingDPS = wingTotalDamage / wingFireRateSeconds;
-            } else {
-                wingDPS = wingConfig.damage / wingFireRateSeconds;
-            }
-            
-            dps = dps + (wingDPS * 2);
+    
+    // Create cache key based on weapon configuration
+    const configKey = `${currentWeapon}-${level}-${wingsLevel}`;
+    
+    // Check if we need to recalculate DPS
+    let dps;
+    if (gameState.lastWeaponConfig === configKey) {
+        // Use cached DPS
+        dps = gameState.cachedDPS;
+    } else {
+        // Calculate DPS
+        const levelConfig = CONFIG.weaponLevels[currentWeapon].levels[level];
+        const fireRateSeconds = levelConfig.fireRate / 1000;
+        
+        if (currentWeapon === 'railgun') {
+            const bullets = levelConfig.bullets || 1;
+            const totalDamagePerShot = levelConfig.damage * bullets;
+            dps = totalDamagePerShot / fireRateSeconds;
+        } else if (currentWeapon === 'blaster') {
+            const pellets = levelConfig.pellets;
+            const totalDamagePerShot = levelConfig.damage * pellets;
+            dps = totalDamagePerShot / fireRateSeconds;
         } else {
-            // Other weapons fire the same weapon from wings
-            dps = dps * 3;
+            dps = levelConfig.damage / fireRateSeconds;
         }
+        
+        // Account for wings addon
+        if (wingsLevel > 0) {
+            if (currentWeapon === 'blaster' && levelConfig.wingWeapon) {
+                // Blaster has special wing weapons
+                const wingWeapon = levelConfig.wingWeapon;
+                const wingLevel = Math.min(level, CONFIG.weaponLevels.maxLevel);
+                const wingConfig = CONFIG.weaponLevels[wingWeapon].levels[wingLevel];
+                const wingFireRateSeconds = wingConfig.fireRate / 1000;
+                let wingDPS = 0;
+                
+                if (wingWeapon === 'railgun') {
+                    const wingBullets = wingConfig.bullets || 1;
+                    const wingTotalDamage = wingConfig.damage * wingBullets;
+                    wingDPS = wingTotalDamage / wingFireRateSeconds;
+                } else {
+                    wingDPS = wingConfig.damage / wingFireRateSeconds;
+                }
+                
+                dps = dps + (wingDPS * 2);
+            } else {
+                // Other weapons fire the same weapon from wings
+                dps = dps * 3;
+            }
+        }
+        
+        // Cache the result
+        gameState.cachedDPS = dps;
+        gameState.lastWeaponConfig = configKey;
     }
     
     const dpsElement = document.getElementById('weapon-dps');
