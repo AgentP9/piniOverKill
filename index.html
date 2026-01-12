@@ -116,79 +116,35 @@
             <canvas id="weapons-canvas"></canvas>
             <div class="menu-overlay">
                 <h1>WEAPONS</h1>
-                <div class="weapons-grid">
-                    <div class="weapon-card">
-                        <h2>LASER</h2>
-                        <div class="weapon-stats">
-                            <p><strong>Type:</strong> Single mighty shot</p>
-                            <p><strong>Base Speed:</strong> 12</p>
-                            <p><strong>Levels:</strong> 1-9 (Complex system)</p>
-                            <p class="stat-info">• L1: 1500ms, 40 dmg</p>
-                            <p class="stat-info">• L2: 1500ms, 50 dmg</p>
-                            <p class="stat-info">• L3: 1200ms, 40 dmg</p>
-                            <p class="stat-info">• L4: 1200ms, 50 dmg</p>
-                            <p class="stat-info">• L5: 1200ms, 60 dmg</p>
-                            <p class="stat-info">• L6: 1000ms, 40 dmg</p>
-                            <p class="stat-info">• L7: 1000ms, 50 dmg</p>
-                            <p class="stat-info">• L8: 1000ms, 60 dmg</p>
-                            <p class="stat-info">• L9: 900ms, 60 dmg</p>
-                        </div>
-                    </div>
-                    <div class="weapon-card">
-                        <h2>PLASMA</h2>
-                        <div class="weapon-stats">
-                            <p><strong>Type:</strong> Balanced</p>
-                            <p><strong>Base Speed:</strong> 8</p>
-                            <p><strong>Levels:</strong> 1-9 (Complex system)</p>
-                            <p class="stat-info">• L1: 600ms, 10 dmg</p>
-                            <p class="stat-info">• L2: 600ms, 14 dmg</p>
-                            <p class="stat-info">• L3: 500ms, 10 dmg</p>
-                            <p class="stat-info">• L4: 500ms, 14 dmg</p>
-                            <p class="stat-info">• L5: 500ms, 18 dmg</p>
-                            <p class="stat-info">• L6: 420ms, 10 dmg</p>
-                            <p class="stat-info">• L7: 420ms, 14 dmg</p>
-                            <p class="stat-info">• L8: 420ms, 18 dmg</p>
-                            <p class="stat-info">• L9: 380ms, 18 dmg</p>
-                        </div>
-                    </div>
-                    <div class="weapon-card">
-                        <h2>RAILGUN</h2>
-                        <div class="weapon-stats">
-                            <p><strong>Type:</strong> Rapid fire</p>
-                            <p><strong>Base Speed:</strong> 15</p>
-                            <p><strong>Levels:</strong> 1-9 (Complex system)</p>
-                            <p class="stat-info">• L1: 200ms, 2 dmg, 1 bullet</p>
-                            <p class="stat-info">• L2: 160ms, 2 dmg, 1 bullet</p>
-                            <p class="stat-info">• L3: 120ms, 2 dmg, 1 bullet</p>
-                            <p class="stat-info">• L4: 160ms, 4 dmg, 1 bullet</p>
-                            <p class="stat-info">• L5: 160ms, 2 dmg, 2 bullets</p>
-                            <p class="stat-info">• L6: 120ms, 2 dmg, 2 bullets</p>
-                            <p class="stat-info">• L7: 160ms, 4 dmg, 2 bullets</p>
-                            <p class="stat-info">• L8: 120ms, 4 dmg, 2 bullets</p>
-                            <p class="stat-info">• L9: 120ms, 6 dmg, 2 bullets</p>
-                        </div>
-                    </div>
-                    <div class="weapon-card">
-                        <h2>BLASTER</h2>
-                        <div class="weapon-stats">
-                            <p><strong>Type:</strong> Shotgun-style spread</p>
-                            <p><strong>Base Speed:</strong> 6</p>
-                            <p><strong>Levels:</strong> 1-9 (Complex system)</p>
-                            <p class="stat-info">• L1: 700ms, 6 dmg/pellet, 5 pellets</p>
-                            <p class="stat-info">• L2: 700ms, 8 dmg/pellet, 5 pellets</p>
-                            <p class="stat-info">• L3: 600ms, 6 dmg/pellet, 6 pellets</p>
-                            <p class="stat-info">• L4: 600ms, 8 dmg/pellet, 6 pellets</p>
-                            <p class="stat-info">• L5: 600ms, 10 dmg/pellet, 6 pellets</p>
-                            <p class="stat-info">• L6: 550ms, 6 dmg/pellet, 7 pellets</p>
-                            <p class="stat-info">• L7: 550ms, 8 dmg/pellet, 7 pellets</p>
-                            <p class="stat-info">• L8: 550ms, 10 dmg/pellet, 7 pellets</p>
-                            <p class="stat-info">• L9: 550ms, 10 dmg/pellet, 8 pellets</p>
-                            <p><strong>Wings Fire:</strong></p>
-                            <p class="stat-info">• L1: Plasma L1, L2: Laser L2, L3: Railgun L3</p>
-                            <p class="stat-info">• L4: Railgun L4, L5: Plasma L5, L6: Laser L5</p>
-                            <p class="stat-info">• L7: Railgun L5, L8: Plasma L6, L9: Plasma L6</p>
-                        </div>
-                    </div>
+                <p class="weapons-subtitle">DAMAGE PER SECOND</p>
+                <div class="ship-toggle">
+                    <button id="ship-no-wings-toggle" class="stat-button active">SHIP w/o WINGS</button>
+                    <button id="ship-with-wings-toggle" class="stat-button">SHIP w/ WINGS</button>
+                </div>
+                <div class="weapons-table-container">
+                    <table id="weapons-table" class="weapons-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th colspan="9">LEVEL</th>
+                            </tr>
+                            <tr>
+                                <th>NAME</th>
+                                <th>1</th>
+                                <th>2</th>
+                                <th>3</th>
+                                <th>4</th>
+                                <th>5</th>
+                                <th>6</th>
+                                <th>7</th>
+                                <th>8</th>
+                                <th>9</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weapons-table-body">
+                            <!-- Table rows will be populated by JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
                 <button id="weapons-back-button" class="game-button">BACK TO MENU</button>
             </div>

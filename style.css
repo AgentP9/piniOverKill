@@ -369,50 +369,113 @@ body {
     height: 100%;
 }
 
-.weapons-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
-    width: 100%;
-    max-width: 900px;
-    margin: 20px 0;
+.weapons-subtitle {
+    font-size: 0.9em;
+    color: #0a0;
+    margin: 5px 0 15px 0;
+    letter-spacing: 2px;
 }
 
-.weapon-card {
+.ship-toggle {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+    justify-content: center;
+}
+
+.stat-button {
+    background: #000;
+    color: #0a0;
+    border: 2px solid #0a0;
+    padding: 10px 30px;
+    font-size: 1em;
+    font-family: 'Courier New', monospace;
+    cursor: pointer;
+    transition: all 0.3s;
+    letter-spacing: 2px;
+}
+
+.stat-button:hover {
+    background: #0a0;
+    color: #000;
+    box-shadow: 0 0 10px #0a0;
+}
+
+.stat-button.active {
+    background: #0f0;
+    color: #000;
+    border-color: #0f0;
+    box-shadow: 0 0 15px #0f0;
+}
+
+.weapons-table-container {
+    width: 100%;
+    max-width: 900px;
+    overflow-x: auto;
     background: rgba(0, 17, 0, 0.95);
     border: 2px solid #0a0;
     padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    margin: 10px 0;
 }
 
-.weapon-card h2 {
-    font-size: 1.3em;
+.weapons-table {
+    width: 100%;
+    border-collapse: collapse;
     color: #0f0;
-    text-align: center;
-    border-bottom: 1px solid #0a0;
-    padding-bottom: 8px;
-    margin-bottom: 5px;
-    text-shadow: 0 0 5px #0f0;
-}
-
-.weapon-stats {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.weapon-stats p {
-    color: #0c0;
     font-size: 0.85em;
-    margin: 0;
+    table-layout: fixed;
 }
 
-.weapon-stats .stat-info {
-    color: #0a0;
-    font-size: 0.8em;
-    padding-left: 10px;
+.weapons-table th {
+    background: rgba(0, 34, 0, 0.9);
+    color: #0f0;
+    padding: 10px 8px;
+    text-align: center;
+    border: 1px solid #0a0;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.weapons-table th:first-child {
+    width: 20%;
+}
+
+.weapons-table td {
+    padding: 8px;
+    text-align: center;
+    border: 1px solid #0a0;
+    color: #0c0;
+}
+
+.weapons-table tbody tr:nth-child(odd) {
+    background: rgba(0, 17, 0, 0.5);
+}
+
+.weapons-table tbody tr:nth-child(even) {
+    background: rgba(0, 8, 0, 0.5);
+}
+
+.weapons-table tbody tr:hover {
+    background: rgba(0, 34, 0, 0.8);
+}
+
+.weapons-table .weapon-name {
+    text-align: left;
+    font-weight: bold;
+    color: #0f0;
+    text-shadow: 0 0 5px #0f0;
+    width: 20%;
+}
+
+.weapons-table .stat-value {
+    font-family: 'Courier New', monospace;
+}
+
+.weapons-table .stat-value.highest-dps {
+    background: rgba(255, 255, 0, 0.2);
+    color: #ff0;
+    font-weight: bold;
+    box-shadow: inset 0 0 5px rgba(255, 255, 0, 0.3);
 }
 
 @media (max-width: 850px) {
@@ -456,20 +519,26 @@ body {
         font-size: 0.8em;
     }
     
-    .weapons-grid {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    
-    .weapon-card {
+    .weapons-table-container {
         padding: 10px;
+        font-size: 0.9em;
     }
     
-    .weapon-card h2 {
-        font-size: 1.1em;
-    }
-    
-    .weapon-stats p {
+    .weapons-table {
         font-size: 0.75em;
+    }
+    
+    .weapons-table th,
+    .weapons-table td {
+        padding: 6px 4px;
+    }
+    
+    .weapons-subtitle {
+        font-size: 0.8em;
+    }
+    
+    .stat-button {
+        font-size: 0.9em;
+        padding: 8px 20px;
     }
 }
