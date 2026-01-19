@@ -1,6 +1,8 @@
 :root {
     --border-width: 4px;
     --border-offset: 8px; /* 4px border on left + 4px border on right (or top + bottom) */
+    --hud-width: 150px;
+    --mobile-hud-width: 120px;
 }
 
 * {
@@ -214,7 +216,7 @@ body {
 }
 
 #hud {
-    width: 150px;
+    width: var(--hud-width);
     height: calc(600px - var(--border-offset));
     background: rgba(0, 0, 0, 0.95);
     border-left: 2px solid #0f0;
@@ -681,7 +683,7 @@ body {
     
     /* Adjust HUD for mobile */
     #hud {
-        width: 120px;
+        width: var(--mobile-hud-width);
         padding: 10px 5px;
         font-size: 0.75em;
     }
@@ -693,7 +695,7 @@ body {
     
     /* Make game canvas responsive */
     #game-canvas {
-        width: calc(100vw - 120px);
+        width: calc(100vw - var(--mobile-hud-width));
         height: 100vh;
     }
 }

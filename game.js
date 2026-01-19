@@ -3937,15 +3937,20 @@ function setupShipViewToggle() {
     });
 }
 
+// Key constants for consistency
+const KEY_ARROW_LEFT = 'arrowleft';
+const KEY_ARROW_RIGHT = 'arrowright';
+const KEY_ARROW_UP = 'arrowup';
+const KEY_ARROW_DOWN = 'arrowdown';
+
 // Initialize weapons table on page load
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        populateWeaponsTable();
-        setupShipViewToggle();
-        setupTableSorting();
-        initializeMobileControls();
-    });
+    document.addEventListener('DOMContentLoaded', initializeGame);
 } else {
+    initializeGame();
+}
+
+function initializeGame() {
     populateWeaponsTable();
     setupShipViewToggle();
     setupTableSorting();
@@ -4071,10 +4076,10 @@ function handleJoystickMove(e) {
     mobileControls.touchState.moveDown = limitedY > threshold;
     
     // Sync with keyboard state for compatibility
-    gameState.keys['arrowleft'] = mobileControls.touchState.moveLeft;
-    gameState.keys['arrowright'] = mobileControls.touchState.moveRight;
-    gameState.keys['arrowup'] = mobileControls.touchState.moveUp;
-    gameState.keys['arrowdown'] = mobileControls.touchState.moveDown;
+    gameState.keys[KEY_ARROW_LEFT] = mobileControls.touchState.moveLeft;
+    gameState.keys[KEY_ARROW_RIGHT] = mobileControls.touchState.moveRight;
+    gameState.keys[KEY_ARROW_UP] = mobileControls.touchState.moveUp;
+    gameState.keys[KEY_ARROW_DOWN] = mobileControls.touchState.moveDown;
 }
 
 function handleJoystickEnd(e) {
@@ -4092,8 +4097,8 @@ function handleJoystickEnd(e) {
     mobileControls.touchState.moveDown = false;
     
     // Clear keyboard state
-    gameState.keys['arrowleft'] = false;
-    gameState.keys['arrowright'] = false;
-    gameState.keys['arrowup'] = false;
-    gameState.keys['arrowdown'] = false;
+    gameState.keys[KEY_ARROW_LEFT] = false;
+    gameState.keys[KEY_ARROW_RIGHT] = false;
+    gameState.keys[KEY_ARROW_UP] = false;
+    gameState.keys[KEY_ARROW_DOWN] = false;
 }
