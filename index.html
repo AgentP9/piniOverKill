@@ -33,10 +33,13 @@
                     <div class="menu-column">
                         <div class="info-box">
                             <h2>CONTROLS</h2>
+                            <p><strong>Desktop:</strong></p>
                             <p>WASD/ARROWS - Move</p>
                             <p>SPACE - Toggle Auto-Fire</p>
                             <p>TAB - Switch Weapon</p>
                             <p>ESC - Pause</p>
+                            <p style="margin-top: 10px;"><strong>Mobile:</strong></p>
+                            <p>Touch controls enabled!</p>
                         </div>
                     </div>
                     
@@ -98,6 +101,23 @@
                         <div class="addon-status" id="addon-turret">Turret: <span>NO</span></div>
                         <div class="addon-status" id="addon-drones">Drones: <span>0</span></div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Touch Controls -->
+            <div id="mobile-controls">
+                <!-- Virtual Joystick -->
+                <div id="joystick-container">
+                    <div id="joystick-base">
+                        <div id="joystick-stick"></div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div id="action-buttons">
+                    <button id="fire-button" class="touch-button">FIRE</button>
+                    <button id="weapon-button" class="touch-button">WEAPON</button>
+                    <button id="pause-button" class="touch-button">PAUSE</button>
                 </div>
             </div>
         </div>

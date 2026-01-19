@@ -3938,11 +3938,162 @@ function setupShipViewToggle() {
 }
 
 // Initialize weapons table on page load
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        populateWeaponsTable();
+        setupShipViewToggle();
+        setupTableSorting();
+        initializeMobileControls();
+    });
+} else {
     populateWeaponsTable();
     setupShipViewToggle();
     setupTableSorting();
-});
+    initializeMobileControls();
+}
 
 // Start menu animation on page load
 startMenuAnimation();
+
+// Mobile Touch Controls
+const mobileControls = {
+    joystick: {
+        active: false,
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0,
+        base: null,
+        stick: null,
+        maxDistance: 35 // Maximum distance the stick can move from center
+    },
+    touchState: {
+        moveLeft: false,
+        moveRight: false,
+        moveUp: false,
+        moveDown: false
+    }
+};
+
+function initializeMobileControls() {
+    // Get references to control elements
+    mobileControls.joystick.base = document.getElementById('joystick-base');
+    mobileControls.joystick.stick = document.getElementById('joystick-stick');
+    
+    const fireButton = document.getElementById('fire-button');
+    const weaponButton = document.getElementById('weapon-button');
+    const pauseButton = document.getElementById('pause-button');
+    
+    if (!mobileControls.joystick.base || !mobileControls.joystick.stick) return;
+    
+    // Joystick Touch Events
+    mobileControls.joystick.base.addEventListener('touchstart', handleJoystickStart, { passive: false });
+    mobileControls.joystick.base.addEventListener('touchmove', handleJoystickMove, { passive: false });
+    mobileControls.joystick.base.addEventListener('touchend', handleJoystickEnd, { passive: false });
+    mobileControls.joystick.base.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
+    
+    // Fire Button (toggles auto-fire)
+    if (fireButton) {
+        fireButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPaused && !gameState.isGameOver) {
+                gameState.autoFire = !gameState.autoFire;
+                updateHUD();
+            }
+        }, { passive: false });
+    }
+    
+    // Weapon Switch Button
+    if (weaponButton) {
+        weaponButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isPaused && !gameState.isGameOver) {
+                switchWeapon();
+            }
+        }, { passive: false });
+    }
+    
+    // Pause Button
+    if (pauseButton) {
+        pauseButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.isGameOver) {
+                togglePause();
+            }
+        }, { passive: false });
+    }
+}
+
+function handleJoystickStart(e) {
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const rect = mobileControls.joystick.base.getBoundingClientRect();
+    
+    mobileControls.joystick.active = true;
+    mobileControls.joystick.startX = rect.left + rect.width / 2;
+    mobileControls.joystick.startY = rect.top + rect.height / 2;
+    
+    handleJoystickMove(e);
+}
+
+function handleJoystickMove(e) {
+    if (!mobileControls.joystick.active) return;
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - mobileControls.joystick.startX;
+    const deltaY = touch.clientY - mobileControls.joystick.startY;
+    
+    // Calculate distance from center
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+    const maxDistance = mobileControls.joystick.maxDistance;
+    
+    // Limit the stick movement to maxDistance
+    let limitedX = deltaX;
+    let limitedY = deltaY;
+    
+    if (distance > maxDistance) {
+        const ratio = maxDistance / distance;
+        limitedX = deltaX * ratio;
+        limitedY = deltaY * ratio;
+    }
+    
+    // Update stick position
+    mobileControls.joystick.stick.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+    
+    // Update movement state based on joystick position
+    const threshold = 10; // Minimum movement to register
+    
+    mobileControls.touchState.moveLeft = limitedX < -threshold;
+    mobileControls.touchState.moveRight = limitedX > threshold;
+    mobileControls.touchState.moveUp = limitedY < -threshold;
+    mobileControls.touchState.moveDown = limitedY > threshold;
+    
+    // Sync with keyboard state for compatibility
+    gameState.keys['arrowleft'] = mobileControls.touchState.moveLeft;
+    gameState.keys['arrowright'] = mobileControls.touchState.moveRight;
+    gameState.keys['arrowup'] = mobileControls.touchState.moveUp;
+    gameState.keys['arrowdown'] = mobileControls.touchState.moveDown;
+}
+
+function handleJoystickEnd(e) {
+    e.preventDefault();
+    
+    mobileControls.joystick.active = false;
+    
+    // Reset stick position
+    mobileControls.joystick.stick.style.transform = 'translate(-50%, -50%)';
+    
+    // Clear movement state
+    mobileControls.touchState.moveLeft = false;
+    mobileControls.touchState.moveRight = false;
+    mobileControls.touchState.moveUp = false;
+    mobileControls.touchState.moveDown = false;
+    
+    // Clear keyboard state
+    gameState.keys['arrowleft'] = false;
+    gameState.keys['arrowright'] = false;
+    gameState.keys['arrowup'] = false;
+    gameState.keys['arrowdown'] = false;
+}

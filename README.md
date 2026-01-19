@@ -105,12 +105,25 @@ The application runs in a lightweight Docker container:
 
 ## Controls
 
+### Desktop Controls
+
 | Key | Action |
 |-----|--------|
 | **Arrow Keys** or **WASD** | Move ship |
 | **SPACE** | Toggle Auto-Fire |
 | **TAB** | Switch weapon type |
 | **ESC** | Pause/Resume game |
+
+### Mobile Controls
+
+The game features touch controls optimized for mobile devices:
+
+- **Virtual Joystick** (bottom-left): Touch and drag to move your ship in any direction
+- **FIRE Button** (bottom-right): Tap to toggle Auto-Fire on/off
+- **WEAPON Button** (bottom-right): Tap to cycle through available weapons
+- **PAUSE Button** (bottom-right): Tap to pause/resume the game
+
+Mobile controls automatically appear on screens smaller than 850px wide.
 
 ## Game Mechanics
 
