@@ -200,7 +200,7 @@ const CONFIG = {
         }
     },
     boss: {
-        spawnThreshold: 15,
+        spawnThreshold: 20,
         blasterSpreadRange: 150, // Range for boss blaster spread calculation
         // Boss difficulty scaling per wave
         healthScaling: 0.05, // 5% increase per wave
@@ -2722,8 +2722,8 @@ function spawnAsteroid() {
     }
 }
 
-function spawnPowerup(x, y) {
-    if (Math.random() > CONFIG.powerup.spawnChance) return;
+function spawnPowerup(x, y, guaranteed = false) {
+    if (!guaranteed && Math.random() > CONFIG.powerup.spawnChance) return;
 
     const types = ['shieldHeal', 'shieldBoost', 'structureRepair', 'repairBot', 'wings', 'nose', 'kamikaze', 'turret', 'weaponLevel'];
     const type = types[Math.floor(Math.random() * types.length)];
@@ -2792,7 +2792,7 @@ function checkCollisions() {
                 if (boss.takeDamage(bullet.damage)) {
                     gameState.score += boss.points;
                     createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.color);
-                    spawnPowerup(boss.x, boss.y);
+                    spawnPowerup(boss.x, boss.y, true);
                     gameState.boss = null;
                     gameState.bossActive = false;
                     gameState.waveComplete = true;
@@ -2885,7 +2885,7 @@ function checkCollisions() {
                 if (boss.takeDamage(bullet.damage)) {
                     gameState.score += boss.points;
                     createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.color);
-                    spawnPowerup(boss.x, boss.y);
+                    spawnPowerup(boss.x, boss.y, true);
                     gameState.boss = null;
                     gameState.bossActive = false;
                     gameState.waveComplete = true;
@@ -3114,7 +3114,7 @@ function checkCollisions() {
                 if (boss.takeDamage(drone.damage)) {
                     gameState.score += boss.points;
                     createExplosion(boss.x + boss.width / 2, boss.y + boss.height / 2, boss.color);
-                    spawnPowerup(boss.x, boss.y);
+                    spawnPowerup(boss.x, boss.y, true);
                     gameState.boss = null;
                     gameState.bossActive = false;
                     gameState.waveComplete = true;
