@@ -3423,16 +3423,12 @@ function updateWarningOverlay(shieldPercent, structurePercent) {
     
     if (!warningOverlay || !warningText) return;
     
-    // Determine if we should show a warning
+    // Show warning only when structure is critical
     const showStructureWarning = structurePercent < WARNING_CONFIG.structureThreshold;
-    const showShieldWarning = shieldPercent < WARNING_CONFIG.shieldThreshold && structurePercent < 100;
     
     if (showStructureWarning) {
         warningOverlay.style.display = 'block';
         warningText.textContent = 'CRITICAL STRUCTURE';
-    } else if (showShieldWarning) {
-        warningOverlay.style.display = 'block';
-        warningText.textContent = 'SHIELD DEPLETED';
     } else {
         warningOverlay.style.display = 'none';
     }
