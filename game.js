@@ -3190,13 +3190,20 @@ function updateHUD() {
     document.getElementById('wave').textContent = gameState.wave;
     
     if (gameState.player) {
+        // Update separate health bars (desktop)
         const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
-        document.getElementById('shield-fill').style.width = shieldPercent + '%';
+        const shieldFill = document.getElementById('shield-fill');
+        if (shieldFill) {
+            shieldFill.style.width = shieldPercent + '%';
+        }
         
         const structurePercent = (gameState.player.structure / gameState.player.maxStructure) * 100;
-        document.getElementById('structure-fill').style.width = structurePercent + '%';
+        const structureFill = document.getElementById('structure-fill');
+        if (structureFill) {
+            structureFill.style.width = structurePercent + '%';
+        }
         
-        // Update numeric health values
+        // Update numeric health values (desktop)
         const shieldValue = document.getElementById('shield-value');
         if (shieldValue) {
             shieldValue.textContent = `${Math.ceil(gameState.player.shield)}/${gameState.player.maxShield}`;
@@ -3205,6 +3212,26 @@ function updateHUD() {
         const structureValue = document.getElementById('structure-value');
         if (structureValue) {
             structureValue.textContent = `${Math.ceil(gameState.player.structure)}/${gameState.player.maxStructure}`;
+        }
+        
+        // Update combined health bar (mobile)
+        const totalHealth = gameState.player.shield + gameState.player.structure;
+        const maxTotalHealth = gameState.player.maxShield + gameState.player.maxStructure;
+        const structurePercentCombined = (gameState.player.structure / maxTotalHealth) * 100;
+        const shieldPercentCombined = (gameState.player.shield / maxTotalHealth) * 100;
+        
+        const structureFillCombined = document.getElementById('structure-fill-combined');
+        const shieldFillCombined = document.getElementById('shield-fill-combined');
+        const combinedHealthValue = document.getElementById('combined-health-value');
+        
+        if (structureFillCombined) {
+            structureFillCombined.style.width = structurePercentCombined + '%';
+        }
+        if (shieldFillCombined) {
+            shieldFillCombined.style.width = shieldPercentCombined + '%';
+        }
+        if (combinedHealthValue) {
+            combinedHealthValue.textContent = `${Math.ceil(totalHealth)}/${maxTotalHealth}`;
         }
     }
     
@@ -3985,28 +4012,21 @@ function initializeMobileControls() {
     mobileControls.joystick.base = document.getElementById('joystick-base');
     mobileControls.joystick.stick = document.getElementById('joystick-stick');
     
-    const fireButton = document.getElementById('fire-button');
     const weaponButton = document.getElementById('weapon-button');
     const pauseButton = document.getElementById('pause-button');
     
     if (!mobileControls.joystick.base || !mobileControls.joystick.stick) return;
+    
+    // Enable auto-fire by default on mobile devices (screen width < 850px)
+    if (window.innerWidth < 850) {
+        gameState.autoFire = true;
+    }
     
     // Joystick Touch Events
     mobileControls.joystick.base.addEventListener('touchstart', handleJoystickStart, { passive: false });
     mobileControls.joystick.base.addEventListener('touchmove', handleJoystickMove, { passive: false });
     mobileControls.joystick.base.addEventListener('touchend', handleJoystickEnd, { passive: false });
     mobileControls.joystick.base.addEventListener('touchcancel', handleJoystickEnd, { passive: false });
-    
-    // Fire Button (toggles auto-fire)
-    if (fireButton) {
-        fireButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            if (!gameState.isPaused && !gameState.isGameOver) {
-                gameState.autoFire = !gameState.autoFire;
-                updateHUD();
-            }
-        }, { passive: false });
-    }
     
     // Weapon Switch Button
     if (weaponButton) {
