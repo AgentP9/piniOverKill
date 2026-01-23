@@ -2533,10 +2533,40 @@ function saveHighScore() {
 }
 
 // High Scores Animation Functions
+function drawHighScoresStarfield() {
+    // Clear canvas
+    highscoresCtx.fillStyle = '#000000';
+    highscoresCtx.fillRect(0, 0, highscoresCanvas.width, highscoresCanvas.height);
+    
+    // Initialize stars if not yet done
+    if (!highscoresStarfield.stars || highscoresStarfield.stars.length === 0) {
+        highscoresStarfield.stars = initializeStarfield();
+    }
+    
+    // Update and draw stars grouped by layer to minimize fillStyle changes
+    for (let layerIndex = 0; layerIndex < CONFIG.stars.speedLayers.length; layerIndex++) {
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        highscoresCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        
+        // Update and draw all stars in this layer
+        for (let i = 0; i < highscoresStarfield.stars.length; i++) {
+            const star = highscoresStarfield.stars[i];
+            if (star.layerIndex !== layerIndex) continue;
+            
+            updateStar(star);
+            highscoresCtx.fillRect(star.x, star.y, star.size, star.size);
+        }
+    }
+}
+
+function highScoresAnimationLoop() {
+    drawHighScoresStarfield();
+    highscoresStarfield.animationId = requestAnimationFrame(highScoresAnimationLoop);
+}
+
 function startHighScoresAnimation() {
     if (!highscoresStarfield.animationId) {
-        initStarfield(highscoresStarfield);
-        animateHighScoresStarfield();
+        highScoresAnimationLoop();
     }
 }
 
@@ -2545,11 +2575,6 @@ function stopHighScoresAnimation() {
         cancelAnimationFrame(highscoresStarfield.animationId);
         highscoresStarfield.animationId = null;
     }
-}
-
-function animateHighScoresStarfield() {
-    drawStarfield(highscoresCtx, highscoresStarfield);
-    highscoresStarfield.animationId = requestAnimationFrame(animateHighScoresStarfield);
 }
 
 function togglePause() {
