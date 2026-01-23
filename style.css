@@ -129,10 +129,16 @@ body {
 
 #menu-screen h1,
 #pause-screen h1,
-#gameover-screen h1,
-#highscores-screen h1 {
+#gameover-screen h1 {
     font-size: 3em;
     margin-bottom: 10px;
+    text-shadow: 0 0 10px #0f0;
+    letter-spacing: 4px;
+}
+
+#highscores-screen h1 {
+    font-size: 3em;
+    margin-bottom: 15px;
     text-shadow: 0 0 10px #0f0;
     letter-spacing: 4px;
 }
@@ -316,10 +322,6 @@ body {
 #highscores-screen .menu-overlay {
     padding: 15px 20px;
     justify-content: center;
-}
-
-#highscores-screen h1 {
-    margin-bottom: 15px;
 }
 
 /* Warning Overlay */
