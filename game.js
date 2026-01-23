@@ -3383,6 +3383,16 @@ function updateAddonStatus() {
             }
         }
     });
+    
+    // Update current weapon display (for mobile)
+    const currentWeaponName = document.getElementById('current-weapon-name');
+    const currentWeaponLevel = document.getElementById('current-weapon-level');
+    if (currentWeaponName && currentWeaponLevel) {
+        const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
+        const level = gameState.weaponLevels[gameState.currentWeapon];
+        currentWeaponName.textContent = weaponConfig.name;
+        currentWeaponLevel.textContent = `L${level}`;
+    }
 }
 
 function drawBackground() {
