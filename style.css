@@ -726,7 +726,7 @@ body {
     }
     
     /* Hide addons section on mobile */
-    .hud-item:has(#addons-list) {
+    .addons-section {
         display: none !important;
     }
     

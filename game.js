@@ -3214,21 +3214,24 @@ function updateHUD() {
             structureValue.textContent = `${Math.ceil(gameState.player.structure)}/${gameState.player.maxStructure}`;
         }
         
-        // Update combined health bar (mobile)
+        // Update combined health bar (mobile) - layered visualization
+        // Shield overlays structure, so when shield depletes, structure shows through
         const totalHealth = gameState.player.shield + gameState.player.structure;
         const maxTotalHealth = gameState.player.maxShield + gameState.player.maxStructure;
         const structurePercentCombined = (gameState.player.structure / maxTotalHealth) * 100;
-        const shieldPercentCombined = (gameState.player.shield / maxTotalHealth) * 100;
+        const totalHealthPercent = (totalHealth / maxTotalHealth) * 100;
         
         const structureFillCombined = document.getElementById('structure-fill-combined');
         const shieldFillCombined = document.getElementById('shield-fill-combined');
         const combinedHealthValue = document.getElementById('combined-health-value');
         
         if (structureFillCombined) {
+            // Structure is always visible at its actual percentage
             structureFillCombined.style.width = structurePercentCombined + '%';
         }
         if (shieldFillCombined) {
-            shieldFillCombined.style.width = shieldPercentCombined + '%';
+            // Shield overlays and shows total health (structure + shield)
+            shieldFillCombined.style.width = totalHealthPercent + '%';
         }
         if (combinedHealthValue) {
             combinedHealthValue.textContent = `${Math.ceil(totalHealth)}/${maxTotalHealth}`;
@@ -3970,6 +3973,9 @@ const KEY_ARROW_RIGHT = 'arrowright';
 const KEY_ARROW_UP = 'arrowup';
 const KEY_ARROW_DOWN = 'arrowdown';
 
+// Mobile breakpoint constant
+const MOBILE_BREAKPOINT = 850; // pixels
+
 // Initialize weapons table on page load
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeGame);
@@ -4017,8 +4023,8 @@ function initializeMobileControls() {
     
     if (!mobileControls.joystick.base || !mobileControls.joystick.stick) return;
     
-    // Enable auto-fire by default on mobile devices (screen width < 850px)
-    if (window.innerWidth < 850) {
+    // Enable auto-fire by default on mobile devices
+    if (window.innerWidth < MOBILE_BREAKPOINT) {
         gameState.autoFire = true;
     }
     
