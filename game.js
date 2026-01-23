@@ -420,6 +420,8 @@ const gameState = {
     wave: 1,
     isPaused: false,
     isGameOver: false,
+    isExploding: false,
+    explosionEndTime: 0,
     player: null,
     enemies: [],
     boss: null,
@@ -958,7 +960,11 @@ class Player {
         
         if (this.structure <= 0) {
             this.structure = 0;
-            gameOver();
+            // Create explosion effect at player position
+            createExplosion(this.x + this.width / 2, this.y + this.height / 2, this.color);
+            // Set explosion state and delay game over
+            gameState.isExploding = true;
+            gameState.explosionEndTime = Date.now() + 1000; // 1 second delay
         }
         updateHUD();
     }
@@ -2386,6 +2392,8 @@ function resetGame() {
     gameState.wave = 1;
     gameState.isPaused = false;
     gameState.isGameOver = false;
+    gameState.isExploding = false;
+    gameState.explosionEndTime = 0;
     gameState.player = new Player();
     gameState.enemies = [];
     gameState.boss = null;
@@ -3790,7 +3798,10 @@ function render() {
     
     const now = Date.now();
     
-    gameState.player.draw();
+    // Don't draw player during explosion
+    if (!gameState.isExploding) {
+        gameState.player.draw();
+    }
     gameState.enemies.forEach(enemy => enemy.draw());
     if (gameState.boss) {
         gameState.boss.draw();
@@ -3805,7 +3816,7 @@ function render() {
     gameState.enemyDrones.forEach(drone => drone.draw());
     
     // Draw repair bot indicator (small robot circling the ship)
-    if (gameState.repairBotActive) {
+    if (gameState.repairBotActive && !gameState.isExploding) {
         const botAngle = (now / 500) % (Math.PI * 2); // Complete rotation every 0.5 seconds
         const botX = gameState.player.x + gameState.player.width / 2 + Math.cos(botAngle) * 35;
         const botY = gameState.player.y + gameState.player.height / 2 + Math.sin(botAngle) * 35;
@@ -3851,6 +3862,23 @@ function render() {
 
 function gameLoop() {
     if (gameState.isPaused || gameState.isGameOver) return;
+
+    const now = Date.now();
+    
+    // Check if explosion animation is complete
+    if (gameState.isExploding) {
+        if (now >= gameState.explosionEndTime) {
+            gameState.isExploding = false;
+            gameOver();
+            return;
+        }
+        
+        // Continue updating particles during explosion
+        gameState.particles = gameState.particles.filter(particle => particle.update());
+        render();
+        requestAnimationFrame(gameLoop);
+        return;
+    }
 
     update();
     render();
