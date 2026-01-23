@@ -33,10 +33,13 @@
                     <div class="menu-column">
                         <div class="info-box">
                             <h2>CONTROLS</h2>
+                            <p><strong>Desktop:</strong></p>
                             <p>WASD/ARROWS - Move</p>
                             <p>SPACE - Toggle Auto-Fire</p>
                             <p>TAB - Switch Weapon</p>
                             <p>ESC - Pause</p>
+                            <p style="margin-top: 10px;"><strong>Mobile:</strong></p>
+                            <p>Touch controls enabled!</p>
                         </div>
                     </div>
                     
@@ -63,13 +66,22 @@
                 <div class="hud-item">
                     <span class="hud-label">HEALTH</span>
                     <div class="health-container">
-                        <div class="health-bar-wrapper">
+                        <!-- Combined health bar for mobile -->
+                        <div class="health-bar-wrapper combined-health-bar">
+                            <span class="health-bar-label">Health <span id="combined-health-value">200/200</span></span>
+                            <div id="combined-health-bar">
+                                <div id="structure-fill-combined"></div>
+                                <div id="shield-fill-combined"></div>
+                            </div>
+                        </div>
+                        <!-- Separate bars for desktop -->
+                        <div class="health-bar-wrapper separate-health-bars">
                             <span class="health-bar-label">Shield <span id="shield-value">100/100</span></span>
                             <div id="shield-bar">
                                 <div id="shield-fill"></div>
                             </div>
                         </div>
-                        <div class="health-bar-wrapper">
+                        <div class="health-bar-wrapper separate-health-bars">
                             <span class="health-bar-label">Structure <span id="structure-value">100/100</span></span>
                             <div id="structure-bar">
                                 <div id="structure-fill"></div>
@@ -90,7 +102,7 @@
                         <div class="weapon-stat" id="autofire-status">Auto-Fire: <span>OFF</span></div>
                     </div>
                 </div>
-                <div class="hud-item">
+                <div class="hud-item addons-section">
                     <span class="hud-label">ADDONS</span>
                     <div id="addons-list">
                         <div class="addon-status" id="addon-wings">Wings: <span>NO</span></div>
@@ -98,6 +110,22 @@
                         <div class="addon-status" id="addon-turret">Turret: <span>NO</span></div>
                         <div class="addon-status" id="addon-drones">Drones: <span>0</span></div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Mobile Touch Controls -->
+            <div id="mobile-controls">
+                <!-- Virtual Joystick -->
+                <div id="joystick-container">
+                    <div id="joystick-base">
+                        <div id="joystick-stick"></div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div id="action-buttons">
+                    <button id="weapon-button" class="touch-button">WEAPON</button>
+                    <button id="pause-button" class="touch-button">PAUSE</button>
                 </div>
             </div>
         </div>
