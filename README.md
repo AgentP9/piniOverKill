@@ -27,6 +27,7 @@ PiniOverKill is a retro-style space shooter featuring:
 ### Enemy Types
 - **Basic enemies**: Standard alien ships that fire at your position
 - **Tough enemies**: More resilient foes with increased health
+- **Boss enemies**: Powerful "Star Destroyer" bosses that appear every 20 enemies defeated. Each boss variant has unique weapons, abilities, and drone deployment capabilities. Boss health and damage scale with each wave
 - **Progressive spawning**: Enemy difficulty increases with each wave
 
 ### Power-ups
@@ -132,15 +133,18 @@ The application runs in a lightweight Docker container:
 ### Health System
 - **Shield**: Starts at 100 points and regenerates automatically after 2 seconds without taking damage
 - **Structure**: Starts at 100 points and requires pickups to repair
-- Enemy projectiles deal 20 damage (to shield first, then structure)
+- Enemy projectiles deal 20 damage base (to shield first, then structure), with boss projectiles dealing 8-30 damage depending on boss type and wave
 - Colliding with enemy ships deals 30 damage
+- Colliding with boss enemies deals 30 damage
 - Asteroids deal 40 damage
 - Game ends when structure reaches 0
 
 ### Scoring
 - Basic enemies: 10 points
 - Tough enemies: 25 points
-- Every 20 enemies defeated advances to the next wave
+- Boss enemies: 500-800 points (depending on variant)
+- Asteroids: 5 points
+- Every 20 enemies defeated spawns a boss and advances to the next wave
 
 ### Weapon Levels
 Each weapon has 9 levels that can be upgraded through pickups:
@@ -220,7 +224,6 @@ Contributions are welcome! Feel free to:
 
 Potential features for future versions:
 - Multiple levels/worlds
-- Boss enemies
 - More power-up types
 - Sound effects and background music
 - Mobile touch controls
