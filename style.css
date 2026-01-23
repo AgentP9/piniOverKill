@@ -136,6 +136,13 @@ body {
     letter-spacing: 4px;
 }
 
+#highscores-screen h1 {
+    font-size: 3em;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #0f0;
+    letter-spacing: 4px;
+}
+
 .subtitle {
     font-size: 1em;
     margin-bottom: 20px;
@@ -200,6 +207,172 @@ body {
     background: #0f0;
     color: #000;
     box-shadow: 0 0 15px #0f0;
+}
+
+/* High Score Entry */
+.highscore-entry {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(0, 17, 0, 0.9);
+    border: 2px solid #ff0;
+    box-shadow: 0 0 15px #ff0;
+}
+
+.highscore-message {
+    font-size: 1.5em;
+    color: #ff0;
+    text-shadow: 0 0 10px #ff0;
+    letter-spacing: 2px;
+}
+
+.name-input {
+    background: #000;
+    color: #0f0;
+    border: 2px solid #0f0;
+    padding: 10px 20px;
+    font-size: 1.1em;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    letter-spacing: 2px;
+    width: 300px;
+}
+
+.name-input:focus {
+    outline: none;
+    border-color: #ff0;
+    box-shadow: 0 0 10px #ff0;
+}
+
+/* High Scores Screen */
+.highscores-container {
+    width: 100%;
+    max-width: 800px;
+    background: rgba(0, 17, 0, 0.95);
+    border: 2px solid #0a0;
+    padding: 15px;
+    margin: 10px auto;
+}
+
+.highscores-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #0f0;
+    font-size: 0.85em;
+}
+
+.highscores-table th {
+    background: rgba(0, 34, 0, 0.9);
+    color: #0f0;
+    padding: 10px 6px;
+    text-align: center;
+    border: 1px solid #0a0;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.highscores-table td {
+    padding: 8px 6px;
+    text-align: center;
+    border: 1px solid #0a0;
+    color: #0c0;
+}
+
+.highscores-table tbody tr:nth-child(odd) {
+    background: rgba(0, 17, 0, 0.5);
+}
+
+.highscores-table tbody tr:nth-child(even) {
+    background: rgba(0, 8, 0, 0.5);
+}
+
+.highscores-table tbody tr:hover {
+    background: rgba(0, 34, 0, 0.8);
+}
+
+.highscores-table .rank-gold {
+    color: #ffd700;
+    font-weight: bold;
+    text-shadow: 0 0 5px #ffd700;
+}
+
+.highscores-table .rank-silver {
+    color: #c0c0c0;
+    font-weight: bold;
+    text-shadow: 0 0 5px #c0c0c0;
+}
+
+.highscores-table .rank-bronze {
+    color: #cd7f32;
+    font-weight: bold;
+    text-shadow: 0 0 5px #cd7f32;
+}
+
+.no-scores-message {
+    text-align: center;
+    padding: 30px;
+    color: #0a0;
+    font-size: 1.1em;
+}
+
+/* Specific layout adjustments for high scores screen */
+#highscores-screen .menu-overlay {
+    padding: 15px 20px;
+    justify-content: center;
+}
+
+/* Warning Overlay */
+.warning-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    pointer-events: none;
+    background: rgba(255, 0, 0, 0.15);
+    animation: fullScreenPulse 1s infinite;
+}
+
+.warning-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px 40px;
+    background: rgba(255, 0, 0, 0.3);
+    border: 3px solid #ff0000;
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(255, 0, 0, 0.8);
+}
+
+.warning-icon {
+    font-size: 3em;
+    color: #ff0000;
+    text-shadow: 0 0 15px #ff0000;
+}
+
+.warning-text {
+    font-size: 2em;
+    color: #ff0000;
+    text-shadow: 0 0 15px #ff0000;
+    letter-spacing: 4px;
+    font-weight: bold;
+}
+
+@keyframes fullScreenPulse {
+    0%, 100% {
+        background: rgba(255, 0, 0, 0.15);
+    }
+    50% {
+        background: rgba(255, 0, 0, 0.30);
+    }
 }
 
 .instructions,
@@ -388,7 +561,8 @@ body {
     text-shadow: 0 0 3px #ff0;
 }
 
-#weapons-canvas {
+#weapons-canvas,
+#highscores-canvas {
     position: absolute;
     top: 0;
     left: 0;

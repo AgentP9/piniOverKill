@@ -355,6 +355,65 @@ const CONFIG = {
     }
 };
 
+// High Score System
+const HIGH_SCORE_KEY = 'piniOverKill_highScores';
+const MAX_HIGH_SCORES = 10;
+
+const highScoreManager = {
+    // Load high scores from localStorage
+    load() {
+        try {
+            const data = localStorage.getItem(HIGH_SCORE_KEY);
+            return data ? JSON.parse(data) : [];
+        } catch (e) {
+            console.error('Failed to load high scores:', e);
+            return [];
+        }
+    },
+    
+    // Save high scores to localStorage
+    save(scores) {
+        try {
+            localStorage.setItem(HIGH_SCORE_KEY, JSON.stringify(scores));
+        } catch (e) {
+            console.error('Failed to save high scores:', e);
+        }
+    },
+    
+    // Add a new score
+    add(name, score, wave) {
+        const scores = this.load();
+        const newScore = {
+            name: name || 'Anonymous',
+            score: score,
+            wave: wave,
+            date: new Date().toISOString()
+        };
+        
+        scores.push(newScore);
+        scores.sort((a, b) => b.score - a.score);
+        
+        // Keep only top MAX_HIGH_SCORES
+        const topScores = scores.slice(0, MAX_HIGH_SCORES);
+        this.save(topScores);
+        
+        // Return the rank (1-based) if it made the list, or 0 if not
+        const rank = topScores.findIndex(s => s === newScore);
+        return rank >= 0 ? rank + 1 : 0;
+    },
+    
+    // Check if a score qualifies for the high score list
+    qualifies(score) {
+        const scores = this.load();
+        return scores.length < MAX_HIGH_SCORES || score > scores[scores.length - 1].score;
+    }
+};
+
+// Warning Overlay Configuration
+const WARNING_CONFIG = {
+    structureThreshold: 25 // Warning when structure is below 25%
+};
+
 // Game State
 const gameState = {
     score: 0,
@@ -527,17 +586,34 @@ const screens = {
     game: document.getElementById('game-screen'),
     pause: document.getElementById('pause-screen'),
     gameover: document.getElementById('gameover-screen'),
-    weaponsOverview: document.getElementById('weapons-overview-screen')
+    weaponsOverview: document.getElementById('weapons-overview-screen'),
+    highscores: document.getElementById('highscores-screen')
+};
+
+// High Scores Canvas Setup
+const highscoresCanvas = document.getElementById('highscores-canvas');
+const highscoresCtx = highscoresCanvas.getContext('2d');
+highscoresCanvas.width = CONFIG.canvas.width;
+highscoresCanvas.height = CONFIG.canvas.height;
+
+// High scores starfield state
+const highscoresStarfield = {
+    scrollOffset: 0,
+    animationId: null,
+    stars: []
 };
 
 // Button Event Listeners
 document.getElementById('start-button').addEventListener('click', startGame);
 document.getElementById('weapons-button').addEventListener('click', showWeaponsOverview);
 document.getElementById('weapons-back-button').addEventListener('click', quitToMenu);
+document.getElementById('highscores-button').addEventListener('click', showHighScores);
+document.getElementById('highscores-back-button').addEventListener('click', quitToMenu);
 document.getElementById('resume-button').addEventListener('click', resumeGame);
 document.getElementById('quit-button').addEventListener('click', quitToMenu);
 document.getElementById('restart-button').addEventListener('click', startGame);
 document.getElementById('menu-button').addEventListener('click', quitToMenu);
+document.getElementById('save-score-button').addEventListener('click', saveHighScore);
 
 // GodMode Toggle
 const godmodeCheckbox = document.getElementById('godmode-checkbox');
@@ -558,6 +634,13 @@ if (fullequipCheckbox) {
 // Keyboard Controls
 document.addEventListener('keydown', (e) => {
     gameState.keys[e.key.toLowerCase()] = true;
+    
+    // Handle Enter key in high score name input
+    if (e.key === 'Enter' && document.activeElement.id === 'player-name-input') {
+        e.preventDefault();
+        saveHighScore();
+        return;
+    }
     
     if (e.key === ' ' && !gameState.isPaused && !gameState.isGameOver) {
         e.preventDefault();
@@ -2378,17 +2461,118 @@ function showScreen(screenName) {
     if (screenName === 'menu') {
         startMenuAnimation();
         stopWeaponsAnimation();
+        stopHighScoresAnimation();
     } else if (screenName === 'weaponsOverview') {
         stopMenuAnimation();
         startWeaponsAnimation();
+        stopHighScoresAnimation();
+    } else if (screenName === 'highscores') {
+        stopMenuAnimation();
+        stopWeaponsAnimation();
+        startHighScoresAnimation();
+        displayHighScores();
     } else {
         stopMenuAnimation();
         stopWeaponsAnimation();
+        stopHighScoresAnimation();
     }
 }
 
 function showWeaponsOverview() {
     showScreen('weaponsOverview');
+}
+
+function showHighScores() {
+    showScreen('highscores');
+}
+
+function displayHighScores() {
+    const scores = highScoreManager.load();
+    const listElement = document.getElementById('highscores-list');
+    const noScoresElement = document.getElementById('no-highscores');
+    
+    if (scores.length === 0) {
+        listElement.innerHTML = '';
+        noScoresElement.style.display = 'block';
+    } else {
+        noScoresElement.style.display = 'none';
+        listElement.innerHTML = scores.map((score, index) => {
+            const date = new Date(score.date);
+            const dateStr = date.toLocaleDateString();
+            let rankClass = '';
+            if (index === 0) rankClass = 'rank-gold';
+            else if (index === 1) rankClass = 'rank-silver';
+            else if (index === 2) rankClass = 'rank-bronze';
+            
+            return `
+                <tr>
+                    <td class="${rankClass}">${index + 1}</td>
+                    <td>${score.name}</td>
+                    <td>${score.score}</td>
+                    <td>${score.wave}</td>
+                    <td>${dateStr}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+}
+
+function saveHighScore() {
+    const nameInput = document.getElementById('player-name-input');
+    const playerName = nameInput.value.trim() || 'Anonymous';
+    
+    highScoreManager.add(playerName, gameState.score, gameState.wave);
+    
+    // Hide the high score entry form
+    document.getElementById('highscore-entry').style.display = 'none';
+    
+    // Clear the input
+    nameInput.value = '';
+}
+
+// High Scores Animation Functions
+function drawHighScoresStarfield() {
+    // Clear canvas
+    highscoresCtx.fillStyle = '#000000';
+    highscoresCtx.fillRect(0, 0, highscoresCanvas.width, highscoresCanvas.height);
+    
+    // Initialize stars if not yet done
+    if (!highscoresStarfield.stars || highscoresStarfield.stars.length === 0) {
+        highscoresStarfield.stars = initializeStarfield();
+    }
+    
+    // Update and draw stars grouped by layer to minimize fillStyle changes
+    for (let layerIndex = 0; layerIndex < CONFIG.stars.speedLayers.length; layerIndex++) {
+        const layer = CONFIG.stars.speedLayers[layerIndex];
+        highscoresCtx.fillStyle = `rgba(255, 255, 255, ${layer.opacity})`;
+        
+        // Update and draw all stars in this layer
+        for (let i = 0; i < highscoresStarfield.stars.length; i++) {
+            const star = highscoresStarfield.stars[i];
+            if (star.layerIndex !== layerIndex) continue;
+            
+            updateStar(star);
+            highscoresCtx.fillRect(star.x, star.y, star.size, star.size);
+        }
+    }
+}
+
+function highScoresAnimationLoop() {
+    drawHighScoresStarfield();
+    highscoresStarfield.animationId = requestAnimationFrame(highScoresAnimationLoop);
+}
+
+function startHighScoresAnimation() {
+    if (!highscoresStarfield.animationId) {
+        highScoresAnimationLoop();
+    }
+}
+
+function stopHighScoresAnimation() {
+    if (highscoresStarfield.animationId) {
+        cancelAnimationFrame(highscoresStarfield.animationId);
+        highscoresStarfield.animationId = null;
+    }
 }
 
 function togglePause() {
@@ -2414,6 +2598,19 @@ function gameOver() {
     gameState.isGameOver = true;
     document.getElementById('final-score').textContent = gameState.score;
     document.getElementById('final-wave').textContent = gameState.wave;
+    
+    // Check if this is a high score
+    const highScoreEntry = document.getElementById('highscore-entry');
+    if (highScoreManager.qualifies(gameState.score)) {
+        highScoreEntry.style.display = 'flex';
+        // Focus the input field
+        setTimeout(() => {
+            document.getElementById('player-name-input').focus();
+        }, 100);
+    } else {
+        highScoreEntry.style.display = 'none';
+    }
+    
     showScreen('gameover');
 }
 
@@ -3206,6 +3403,9 @@ function updateHUD() {
         if (structureValue) {
             structureValue.textContent = `${Math.ceil(gameState.player.structure)}/${gameState.player.maxStructure}`;
         }
+        
+        // Update warning overlay
+        updateWarningOverlay(shieldPercent, structurePercent);
     }
     
     // Update addon status display
@@ -3213,6 +3413,23 @@ function updateHUD() {
     
     // Update weapon stats
     updateWeaponStats();
+}
+
+function updateWarningOverlay(shieldPercent, structurePercent) {
+    const warningOverlay = document.getElementById('warning-overlay');
+    const warningText = document.getElementById('warning-text');
+    
+    if (!warningOverlay || !warningText) return;
+    
+    // Show warning only when structure is critical
+    const showStructureWarning = structurePercent < WARNING_CONFIG.structureThreshold;
+    
+    if (showStructureWarning) {
+        warningOverlay.style.display = 'block';
+        warningText.textContent = 'CRITICAL STRUCTURE';
+    } else {
+        warningOverlay.style.display = 'none';
+    }
 }
 
 function updateWeaponStats() {

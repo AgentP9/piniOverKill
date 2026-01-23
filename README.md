@@ -21,6 +21,8 @@ PiniOverKill is a retro-style space shooter featuring:
 - **Weapon switching**: Press TAB to switch between weapon types
 - **Health system**: Your ship has both Shield (regenerates over time) and Structure (requires repair)
 - **Power-ups**: Collect weapon upgrades, health repairs, and special enhancements
+- **High Score System**: Persistent leaderboard that tracks your top 10 best scores
+- **Warning Overlay**: Visual alerts when your ship's health reaches critical levels
 
 ### Enemy Types
 - **Basic enemies**: Standard alien ships that fire at your position
@@ -41,6 +43,19 @@ PiniOverKill is a retro-style space shooter featuring:
 
 ### Other Addons
 - **Kamikaze Drones** (Pink Diamond): Deploys autonomous drones that seek and destroy enemies
+
+### High Score System
+- **Persistent Storage**: Your best scores are saved locally using browser localStorage
+- **Top 10 Leaderboard**: Track your highest scoring games with player name, score, wave reached, and date
+- **Name Entry**: Enter your name when you achieve a high score
+- **Rank Highlighting**: Top 3 scores are highlighted with gold (1st), silver (2nd), and bronze (3rd) colors
+- **Access**: View high scores from the main menu by clicking "HIGH SCORES"
+
+### Warning System
+- **Critical Structure**: Red warning overlay appears when structure falls below 25%
+- **Shield Depleted**: Warning appears when shield drops below 30% and structure is damaged
+- **Visual Alerts**: Pulsing animation ensures you notice when your ship is in danger
+- **Real-time Updates**: Warnings automatically show and hide based on current health status
 
 ## Docker Deployment
 
@@ -138,6 +153,7 @@ Each weapon has 9 levels that can be upgraded through pickups:
 
 - **Frontend**: Pure HTML5, CSS3, and JavaScript (no frameworks)
 - **Canvas API**: For game rendering
+- **localStorage API**: For persistent high score storage
 - **Web Server**: Nginx (Alpine Linux)
 - **Containerization**: Docker & Docker Compose
 
@@ -206,7 +222,6 @@ Potential features for future versions:
 - Multiple levels/worlds
 - Boss enemies
 - More power-up types
-- Local high score storage
 - Sound effects and background music
 - Mobile touch controls
 - Multiplayer support
