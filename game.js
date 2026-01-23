@@ -470,7 +470,9 @@ const gameState = {
     enemyDrones: [], // Array of enemy-deployed drones
     stars: [], // Array of star objects for parallax starfield
     cachedDPS: 0, // Cache current weapon DPS to avoid recalculation
-    lastWeaponConfig: null // Track last weapon configuration for cache invalidation
+    lastWeaponConfig: null, // Track last weapon configuration for cache invalidation
+    playgroundMode: false, // Playground mode for testing enemy types
+    playgroundEnemyIndex: 0 // Track which enemy type to spawn next in playground
 };
 
 // Canvas Setup
@@ -607,6 +609,7 @@ const highscoresStarfield = {
 
 // Button Event Listeners
 document.getElementById('start-button').addEventListener('click', startGame);
+document.getElementById('playground-button').addEventListener('click', startPlayground);
 document.getElementById('weapons-button').addEventListener('click', showWeaponsOverview);
 document.getElementById('weapons-back-button').addEventListener('click', quitToMenu);
 document.getElementById('highscores-button').addEventListener('click', showHighScores);
@@ -2393,6 +2396,15 @@ class EnemyDrone {
 // Game Functions
 function startGame() {
     resetGame();
+    gameState.playgroundMode = false;
+    showScreen('game');
+    gameLoop();
+}
+
+function startPlayground() {
+    resetGame();
+    gameState.playgroundMode = true;
+    gameState.playgroundEnemyIndex = 0;
     showScreen('game');
     gameLoop();
 }
