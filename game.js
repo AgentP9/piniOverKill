@@ -1143,7 +1143,17 @@ class Enemy {
         // Draw engine flames (multiple for larger ships)
         const numEngines = this.type === 'battleship' ? 3 : (this.type === 'cruiser' || this.type === 'heavy' ? 2 : 1);
         for (let e = 0; e < numEngines; e++) {
-            const engineX = numEngines === 1 ? centerX : (centerX - this.width * 0.25 + (e * this.width * 0.5));
+            // Position engines at the actual wing corners for proper visual alignment
+            let engineX;
+            if (numEngines === 1) {
+                engineX = centerX;
+            } else if (numEngines === 2) {
+                // Place engines at the left and right base corners
+                engineX = e === 0 ? this.x : this.x + this.width;
+            } else { // numEngines === 3
+                // Place outer engines at corners, center engine in middle
+                engineX = e === 0 ? this.x : (e === 1 ? centerX : this.x + this.width);
+            }
             
             // Outer flame (reddish/orange - enemy theme)
             ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
