@@ -470,7 +470,9 @@ const gameState = {
     enemyDrones: [], // Array of enemy-deployed drones
     stars: [], // Array of star objects for parallax starfield
     cachedDPS: 0, // Cache current weapon DPS to avoid recalculation
-    lastWeaponConfig: null // Track last weapon configuration for cache invalidation
+    lastWeaponConfig: null, // Track last weapon configuration for cache invalidation
+    playgroundMode: false, // Playground mode for testing enemy types
+    playgroundEnemyIndex: 0 // Track which enemy type to spawn next in playground
 };
 
 // Canvas Setup
@@ -607,6 +609,7 @@ const highscoresStarfield = {
 
 // Button Event Listeners
 document.getElementById('start-button').addEventListener('click', startGame);
+document.getElementById('playground-button').addEventListener('click', startPlayground);
 document.getElementById('weapons-button').addEventListener('click', showWeaponsOverview);
 document.getElementById('weapons-back-button').addEventListener('click', quitToMenu);
 document.getElementById('highscores-button').addEventListener('click', showHighScores);
@@ -1143,7 +1146,17 @@ class Enemy {
         // Draw engine flames (multiple for larger ships)
         const numEngines = this.type === 'battleship' ? 3 : (this.type === 'cruiser' || this.type === 'heavy' ? 2 : 1);
         for (let e = 0; e < numEngines; e++) {
-            const engineX = numEngines === 1 ? centerX : (centerX - this.width * 0.25 + (e * this.width * 0.5));
+            // Position engines at the actual wing corners for proper visual alignment
+            let engineX;
+            if (numEngines === 1) {
+                engineX = centerX;
+            } else if (numEngines === 2) {
+                // Place engines at the left and right base corners
+                engineX = e === 0 ? this.x : this.x + this.width;
+            } else { // numEngines === 3
+                // Place outer engines at corners, center engine in middle
+                engineX = e === 0 ? this.x : (e === 1 ? centerX : this.x + this.width);
+            }
             
             // Outer flame (reddish/orange - enemy theme)
             ctx.fillStyle = `rgba(255, 100, 0, ${0.6 * flameFlicker})`;
@@ -2383,6 +2396,15 @@ class EnemyDrone {
 // Game Functions
 function startGame() {
     resetGame();
+    gameState.playgroundMode = false;
+    showScreen('game');
+    gameLoop();
+}
+
+function startPlayground() {
+    resetGame();
+    gameState.playgroundMode = true;
+    gameState.playgroundEnemyIndex = 0;
     showScreen('game');
     gameLoop();
 }
@@ -2846,7 +2868,16 @@ function spawnEnemy() {
     
     // Progressive enemy type selection based on wave
     const wave = gameState.wave;
-    const type = selectEnemyTypeForWave(wave);
+    let type;
+    
+    if (gameState.playgroundMode) {
+        // Playground mode: cycle through enemy types from small to big
+        const enemyTypes = ['small', 'standard', 'advanced', 'heavy', 'cruiser', 'battleship'];
+        type = enemyTypes[gameState.playgroundEnemyIndex % enemyTypes.length];
+        gameState.playgroundEnemyIndex++;
+    } else {
+        type = selectEnemyTypeForWave(wave);
+    }
     
     gameState.enemies.push(new Enemy(type, wave));
     gameState.enemiesInWave++;
