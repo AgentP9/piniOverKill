@@ -3175,6 +3175,21 @@ function checkCollisions() {
         }
     }
 
+    // Boss vs Player
+    if (gameState.boss) {
+        const boss = gameState.boss;
+        const player = gameState.player;
+        
+        if (boss.x < player.x + player.width &&
+            boss.x + boss.width > player.x &&
+            boss.y < player.y + player.height &&
+            boss.y + boss.height > player.y) {
+            
+            player.takeDamage(30);
+            createExplosion(player.x + player.width / 2, player.y + player.height / 2, '#ff0000');
+        }
+    }
+
     // Powerups vs Player
     for (let i = gameState.powerups.length - 1; i >= 0; i--) {
         const powerup = gameState.powerups[i];
