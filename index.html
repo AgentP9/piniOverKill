@@ -16,6 +16,7 @@
                 <div class="menu-buttons">
                     <button id="start-button" class="game-button">START GAME</button>
                     <button id="weapons-button" class="game-button">SHOW WEAPONS</button>
+                    <button id="highscores-button" class="game-button">HIGH SCORES</button>
                 </div>
                 
                 <div class="godmode-toggle">
@@ -53,8 +54,39 @@
             </div>
         </div>
 
+        <div id="highscores-screen" class="screen" style="display: none;">
+            <canvas id="highscores-canvas"></canvas>
+            <div class="menu-overlay">
+                <h1>HIGH SCORES</h1>
+                <div class="highscores-container">
+                    <table class="highscores-table">
+                        <thead>
+                            <tr>
+                                <th>RANK</th>
+                                <th>NAME</th>
+                                <th>SCORE</th>
+                                <th>WAVE</th>
+                                <th>DATE</th>
+                            </tr>
+                        </thead>
+                        <tbody id="highscores-list">
+                            <!-- High scores will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p id="no-highscores" class="no-scores-message" style="display: none;">No high scores yet. Be the first!</p>
+                </div>
+                <button id="highscores-back-button" class="game-button">BACK TO MENU</button>
+            </div>
+        </div>
+
         <div id="game-screen" class="screen" style="display: none;">
             <canvas id="game-canvas"></canvas>
+            <div id="warning-overlay" class="warning-overlay" style="display: none;">
+                <div class="warning-content">
+                    <span class="warning-icon">⚠</span>
+                    <span id="warning-text" class="warning-text">WARNING</span>
+                </div>
+            </div>
             <div id="hud">
                 <div class="hud-item">
                     <span class="hud-label">SCORE / WAVE</span>
@@ -112,6 +144,11 @@
             <h1>GAME OVER</h1>
             <p class="final-score">FINAL SCORE: <span id="final-score">0</span></p>
             <p class="final-wave">WAVES COMPLETED: <span id="final-wave">0</span></p>
+            <div id="highscore-entry" class="highscore-entry" style="display: none;">
+                <p class="highscore-message">NEW HIGH SCORE!</p>
+                <input type="text" id="player-name-input" class="name-input" placeholder="Enter your name" maxlength="20" />
+                <button id="save-score-button" class="game-button">SAVE SCORE</button>
+            </div>
             <button id="restart-button" class="game-button">PLAY AGAIN</button>
             <button id="menu-button" class="game-button">MAIN MENU</button>
         </div>
