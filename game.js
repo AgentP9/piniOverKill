@@ -411,9 +411,7 @@ const highScoreManager = {
 
 // Warning Overlay Configuration
 const WARNING_CONFIG = {
-    shieldThreshold: 30, // Warning when shield is below 30%
-    structureThreshold: 25, // Warning when structure is below 25%
-    flashInterval: 500 // Flash interval in ms
+    structureThreshold: 25 // Warning when structure is below 25%
 };
 
 // Game State
