@@ -133,7 +133,7 @@ The application runs in a lightweight Docker container:
 ### Health System
 - **Shield**: Starts at 100 points and regenerates automatically after 2 seconds without taking damage
 - **Structure**: Starts at 100 points and requires pickups to repair
-- Enemy projectiles deal 15-30 damage (to shield first, then structure)
+- Enemy projectiles deal 20 damage base (to shield first, then structure), with boss projectiles dealing 8-30 damage depending on boss type and wave
 - Colliding with enemy ships deals 30 damage
 - Colliding with boss enemies deals 30 damage
 - Asteroids deal 40 damage
