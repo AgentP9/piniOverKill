@@ -2868,7 +2868,16 @@ function spawnEnemy() {
     
     // Progressive enemy type selection based on wave
     const wave = gameState.wave;
-    const type = selectEnemyTypeForWave(wave);
+    let type;
+    
+    if (gameState.playgroundMode) {
+        // Playground mode: cycle through enemy types from small to big
+        const enemyTypes = ['small', 'standard', 'advanced', 'heavy', 'cruiser', 'battleship'];
+        type = enemyTypes[gameState.playgroundEnemyIndex % enemyTypes.length];
+        gameState.playgroundEnemyIndex++;
+    } else {
+        type = selectEnemyTypeForWave(wave);
+    }
     
     gameState.enemies.push(new Enemy(type, wave));
     gameState.enemiesInWave++;
