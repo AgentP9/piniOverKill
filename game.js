@@ -3863,15 +3863,17 @@ function render() {
 function gameLoop() {
     if (gameState.isPaused || gameState.isGameOver) return;
 
+    const now = Date.now();
+    
     // Check if explosion animation is complete
-    if (gameState.isExploding && Date.now() >= gameState.explosionEndTime) {
-        gameState.isExploding = false;
-        gameOver();
-        return;
-    }
-
-    // Continue updating particles during explosion
     if (gameState.isExploding) {
+        if (now >= gameState.explosionEndTime) {
+            gameState.isExploding = false;
+            gameOver();
+            return;
+        }
+        
+        // Continue updating particles during explosion
         gameState.particles = gameState.particles.filter(particle => particle.update());
         render();
         requestAnimationFrame(gameLoop);
