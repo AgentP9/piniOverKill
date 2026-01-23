@@ -302,6 +302,55 @@ body {
     transition: width 0.3s;
 }
 
+/* Mobile Top Banner */
+#mobile-top-banner {
+    display: none; /* Hidden by default, shown on mobile */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.9);
+    border-bottom: 2px solid #0f0;
+    padding: 8px 10px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+#mobile-score {
+    color: #ff0;
+    font-size: 1em;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0 0 5px #ff0;
+}
+
+#mobile-health-bar {
+    width: 100%;
+    height: 12px;
+    background: #330000;
+    border: 1px solid #0f0;
+    position: relative;
+    overflow: hidden;
+}
+
+#mobile-structure-fill {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #ff8800, #cc6600);
+    transition: width 0.3s;
+}
+
+#mobile-shield-fill {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #0f0, #0a0);
+    transition: width 0.3s;
+}
+
 /* Current weapon display for mobile - hidden by default */
 #current-weapon-display {
     display: none;
@@ -720,51 +769,14 @@ body {
         display: block;
     }
     
-    /* Reorganize HUD for mobile - move items to bottom */
-    #hud {
-        width: 100%;
-        height: auto;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        border-left: none;
-        border-top: 2px solid #0f0;
-        flex-direction: row;
-        justify-content: space-around;
-        padding: 10px;
-        gap: 10px;
-        font-size: 0.7em;
-        z-index: 900;
-    }
-    
-    .hud-item {
-        padding: 5px 8px;
-        gap: 3px;
-        flex: 1;
-        min-width: 0;
-    }
-    
-    .hud-label {
-        font-size: 0.7em;
-    }
-    
-    /* Hide separate health bars, show combined on mobile */
-    .separate-health-bars {
-        display: none !important;
-    }
-    
-    .combined-health-bar {
+    /* Show mobile top banner */
+    #mobile-top-banner {
         display: flex !important;
     }
     
-    /* Show only current weapon on mobile */
-    #weapons-list {
+    /* Hide desktop HUD on mobile */
+    #hud {
         display: none !important;
-    }
-    
-    #current-weapon-display {
-        display: block !important;
     }
     
     /* Hide weapon stats (DPS and Auto-Fire) on mobile */

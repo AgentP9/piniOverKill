@@ -3189,6 +3189,16 @@ function updateHUD() {
     document.getElementById('score').textContent = gameState.score;
     document.getElementById('wave').textContent = gameState.wave;
     
+    // Update mobile top banner
+    const mobileScoreValue = document.getElementById('mobile-score-value');
+    const mobileWaveValue = document.getElementById('mobile-wave-value');
+    if (mobileScoreValue) {
+        mobileScoreValue.textContent = gameState.score;
+    }
+    if (mobileWaveValue) {
+        mobileWaveValue.textContent = gameState.wave;
+    }
+    
     if (gameState.player) {
         // Update separate health bars (desktop)
         const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
@@ -3235,6 +3245,16 @@ function updateHUD() {
         }
         if (combinedHealthValue) {
             combinedHealthValue.textContent = `${Math.ceil(totalHealth)}/${maxTotalHealth}`;
+        }
+        
+        // Update mobile top banner health bar
+        const mobileStructureFill = document.getElementById('mobile-structure-fill');
+        const mobileShieldFill = document.getElementById('mobile-shield-fill');
+        if (mobileStructureFill) {
+            mobileStructureFill.style.width = structurePercentCombined + '%';
+        }
+        if (mobileShieldFill) {
+            mobileShieldFill.style.width = totalHealthPercent + '%';
         }
     }
     
@@ -3392,6 +3412,16 @@ function updateAddonStatus() {
         const level = gameState.weaponLevels[gameState.currentWeapon];
         currentWeaponName.textContent = weaponConfig.name;
         currentWeaponLevel.textContent = `L${level}`;
+    }
+    
+    // Update weapon button (for mobile)
+    const weaponButtonName = document.getElementById('weapon-button-name');
+    const weaponButtonLevel = document.getElementById('weapon-button-level');
+    if (weaponButtonName && weaponButtonLevel) {
+        const weaponConfig = CONFIG.weapons[gameState.currentWeapon];
+        const level = gameState.weaponLevels[gameState.currentWeapon];
+        weaponButtonName.textContent = weaponConfig.name.toUpperCase();
+        weaponButtonLevel.textContent = `L${level}`;
     }
 }
 

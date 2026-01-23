@@ -58,6 +58,18 @@
 
         <div id="game-screen" class="screen" style="display: none;">
             <canvas id="game-canvas"></canvas>
+            
+            <!-- Mobile Top Banner (hidden on desktop) -->
+            <div id="mobile-top-banner">
+                <div id="mobile-score">
+                    <span id="mobile-score-value">0</span> / <span id="mobile-wave-value">1</span>
+                </div>
+                <div id="mobile-health-bar">
+                    <div id="mobile-structure-fill"></div>
+                    <div id="mobile-shield-fill"></div>
+                </div>
+            </div>
+            
             <div id="hud">
                 <div class="hud-item">
                     <span class="hud-label">SCORE / WAVE</span>
@@ -128,7 +140,10 @@
                 
                 <!-- Action Buttons -->
                 <div id="action-buttons">
-                    <button id="weapon-button" class="touch-button">WEAPON</button>
+                    <button id="weapon-button" class="touch-button">
+                        <span id="weapon-button-name">PLASMA</span><br>
+                        <span id="weapon-button-level">L1</span>
+                    </button>
                     <button id="pause-button" class="touch-button">PAUSE</button>
                 </div>
             </div>
