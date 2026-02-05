@@ -789,9 +789,14 @@ body {
         display: none !important;
     }
     
-    /* Make game canvas responsive */
+    /* Make game canvas responsive while maintaining aspect ratio */
     #game-canvas {
+        position: fixed;
+        top: 50px; /* Below top banner */
+        left: 0;
         width: 100vw;
-        height: 100vh;
+        height: calc(100vh - 50px);
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
     }
 }

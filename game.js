@@ -4028,6 +4028,51 @@ function initializeGame() {
     setupShipViewToggle();
     setupTableSorting();
     initializeMobileControls();
+    setupResponsiveCanvas();
+}
+
+// Setup responsive canvas for mobile
+function setupResponsiveCanvas() {
+    if (window.innerWidth < MOBILE_BREAKPOINT) {
+        resizeCanvasForMobile();
+        window.addEventListener('resize', resizeCanvasForMobile);
+    }
+}
+
+function resizeCanvasForMobile() {
+    if (window.innerWidth >= MOBILE_BREAKPOINT) return;
+    
+    const canvas = document.getElementById('game-canvas');
+    if (!canvas) return;
+    
+    // Get available viewport dimensions (accounting for top banner)
+    const topBannerHeight = 50;
+    const availableWidth = window.innerWidth;
+    const availableHeight = window.innerHeight - topBannerHeight;
+    
+    // Calculate aspect ratio preserving dimensions
+    const gameAspectRatio = CONFIG.canvas.width / CONFIG.canvas.height; // 800/600 = 1.333...
+    const viewportAspectRatio = availableWidth / availableHeight;
+    
+    let canvasWidth, canvasHeight;
+    
+    if (viewportAspectRatio > gameAspectRatio) {
+        // Viewport is wider - fit to height
+        canvasHeight = availableHeight;
+        canvasWidth = canvasHeight * gameAspectRatio;
+    } else {
+        // Viewport is taller - fit to width
+        canvasWidth = availableWidth;
+        canvasHeight = canvasWidth / gameAspectRatio;
+    }
+    
+    // Set canvas display size (CSS)
+    canvas.style.width = canvasWidth + 'px';
+    canvas.style.height = canvasHeight + 'px';
+    
+    // Center canvas if there's extra space
+    canvas.style.left = ((availableWidth - canvasWidth) / 2) + 'px';
+    canvas.style.top = (topBannerHeight + (availableHeight - canvasHeight) / 2) + 'px';
 }
 
 // Start menu animation on page load
