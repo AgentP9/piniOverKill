@@ -726,6 +726,11 @@ body {
         gap: 10px;
     }
     
+    /* Hide controls section on mobile menu screen */
+    .controls-section {
+        display: none;
+    }
+    
     .info-box,
     .info-box-wide {
         padding: 10px;
