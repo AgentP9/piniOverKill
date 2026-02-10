@@ -125,6 +125,37 @@ The game features touch controls optimized for mobile devices:
 
 Mobile controls automatically appear on screens smaller than 850px wide.
 
+## Progressive Web App (PWA)
+
+PiniOverKill is installable as a Progressive Web App on mobile devices:
+
+### Features
+- **Offline Play**: Works without internet connection after first load
+- **Install to Home Screen**: Add the game icon to your device's home screen
+- **App-Like Experience**: Runs in standalone mode without browser UI
+- **Fast Loading**: Cached assets for instant startup
+
+### Installation
+
+#### On Android (Chrome/Edge)
+1. Open the game in Chrome or Edge browser
+2. Tap the menu (⋮) and select "Install app" or "Add to Home screen"
+3. Confirm the installation
+4. Launch from your home screen
+
+#### On iOS (Safari)
+1. Open the game in Safari
+2. Tap the Share button (□↑)
+3. Scroll and tap "Add to Home Screen"
+4. Name the app and tap "Add"
+5. Launch from your home screen
+
+### Technical Details
+- **Service Worker**: Caches game files for offline functionality
+- **Web App Manifest**: Defines app metadata and appearance
+- **Cache Strategy**: Network-first with fallback to cache
+- **Auto-updates**: New versions update automatically when online
+
 ## Game Mechanics
 
 ### Health System

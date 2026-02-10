@@ -1,0 +1,10 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#000000"/>
+  <rect x="32" y="32" width="448" height="448" fill="none" stroke="#00ff00" stroke-width="8"/>
+  <polygon points="256,140 290,260 256,240 222,260" fill="#00ff00"/>
+  <circle cx="256" cy="320" r="20" fill="#ff0000" opacity="0.6"/>
+  <circle cx="220" cy="340" r="15" fill="#ff0000" opacity="0.6"/>
+  <circle cx="292" cy="340" r="15" fill="#ff0000" opacity="0.6"/>
+  <text x="256" y="400" font-family="monospace" font-size="48" fill="#00ff00" text-anchor="middle" font-weight="bold">PINI</text>
+  <text x="256" y="450" font-family="monospace" font-size="36" fill="#00ff00" text-anchor="middle">OVERKILL</text>
+</svg>
